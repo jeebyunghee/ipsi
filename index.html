@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="입시 나침반">
+<meta name="robots" content="noindex">
+<title>입시 나침반</title>
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px;font-family:system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 수능 OMR 답안지처럼 — 흰 종이, 붉은 마킹선, 하단 탭 5개로 오늘·전형·계산기·문제·학생부 */
+:root{
+  --paper:#f6f7f5; --card:#ffffff; --ink:#18202b; --muted:#5d6672; --line:#e3d4d2;
+  --omr:#c9423a; --omr-soft:#fbeceb; --blue:#2f5f8a; --blue-soft:#e8f0f7;
+  --ok:#2e7d4f; --ok-soft:#e5f3ea; --warn:#a86a10; --warn-soft:#fbf1df; --bad:#b3362e;
+  --f-disp:"Do Hyeon","IBM Plex Sans KR",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#12161c; --card:#1b2129; --ink:#e8ebef; --muted:#9aa4b0; --line:#3a2e2e;
+  --omr:#ef6a5f; --omr-soft:#3a2321; --blue:#7fb2e0; --blue-soft:#1d2b3a;
+  --ok:#6fcf97; --ok-soft:#1c3226; --warn:#e7b45a; --warn-soft:#3a2f1a; --bad:#f08a80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#12161c; --card:#1b2129; --ink:#e8ebef; --muted:#9aa4b0; --line:#3a2e2e;
+  --omr:#ef6a5f; --omr-soft:#3a2321; --blue:#7fb2e0; --blue-soft:#1d2b3a;
+  --ok:#6fcf97; --ok-soft:#1c3226; --warn:#e7b45a; --warn-soft:#3a2f1a; --bad:#f08a80; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 96px;display:flex;flex-direction:column;gap:16px}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:2px solid var(--omr);padding-bottom:10px}
+header.top h1{font-family:var(--f-disp);font-weight:400;font-size:28px;margin:0;line-height:1.1;letter-spacing:.5px}
+header.top .sub{color:var(--muted);font-size:12px;letter-spacing:.06em}
+.dday{font-family:var(--f-num);text-align:right}
+.dday b{display:block;font-size:24px;color:var(--omr)}
+.dday span{font-size:11px;color:var(--muted)}
+h2{font-family:var(--f-disp);font-weight:400;font-size:21px;margin:4px 0 0;text-wrap:balance}
+h3{font-size:16px;margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.label{font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.muted{color:var(--muted);font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.grid5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:380px){.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.bubble{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border:1px dashed var(--line);border-radius:8px}
+.bubble .g{width:40px;height:40px;border-radius:50%;border:2px solid var(--omr);display:grid;place-items:center;font-family:var(--f-num);font-size:18px;color:var(--omr)}
+.bubble .g.on{background:var(--omr);color:var(--card)}
+.bubble small{font-size:12px;color:var(--muted)}
+.tl{display:flex;flex-direction:column;gap:0}
+.tl .it{display:grid;grid-template-columns:92px 1fr auto;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);align-items:baseline}
+.tl .it:last-child{border-bottom:0}
+.tl .d{font-family:var(--f-num);font-size:12px;color:var(--muted)}
+.tl .n{font-family:var(--f-num);font-size:12px;color:var(--omr);white-space:nowrap}
+.tl .it.past{opacity:.5}
+.pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--blue-soft);color:var(--blue);white-space:nowrap}
+.pill.omr{background:var(--omr-soft);color:var(--omr)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--omr-soft);color:var(--bad)}
+.seg{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.seg button{flex:0 0 auto}
+button,.btn{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer}
+button.pri{background:var(--omr);border-color:var(--omr);color:#fff}
+button.sel{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:12px;white-space:nowrap}
+td.num{font-family:var(--f-num);white-space:nowrap}
+.tr-title{font-weight:700}
+input,select,textarea{font:inherit;font-size:15px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;width:100%;min-width:0}
+textarea{min-height:80px;resize:vertical}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld label{font-size:12px;color:var(--muted)}
+.note{font-size:12px;color:var(--muted);border-left:3px solid var(--omr);padding-left:8px}
+.q-opts{display:flex;flex-direction:column;gap:8px}
+.q-opts button{text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px 12px}
+.q-opts .mk{flex:0 0 22px;height:22px;border-radius:50%;border:2px solid var(--omr);display:grid;place-items:center;font-family:var(--f-num);font-size:12px;color:var(--omr)}
+.q-opts button.right{border-color:var(--ok);background:var(--ok-soft)}
+.q-opts button.wrong{border-color:var(--bad);background:var(--omr-soft)}
+.passage{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px;font-family:Georgia,"Times New Roman",var(--f-body);font-size:15px;line-height:1.75;white-space:pre-line}
+.passage.ko{font-family:var(--f-body);line-height:1.8}
+.btn{text-decoration:none;display:inline-block}
+.explain{background:var(--blue-soft);border-radius:8px;padding:10px;font-size:14px}
+.score{font-family:var(--f-num);font-size:30px;color:var(--omr)}
+.entry{border-top:1px dashed var(--line);padding-top:10px;display:flex;flex-direction:column;gap:4px}
+.entry:first-child{border-top:0;padding-top:0}
+.bar{height:8px;background:var(--paper);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--omr)}
+.srow{display:grid;grid-template-columns:76px 1fr 92px;gap:8px;align-items:center;font-size:13px}
+.srow .v{font-family:var(--f-num);font-size:12px;text-align:right;white-space:nowrap}
+.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:6px}
+.grid7 div{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border:1px dashed var(--line);border-radius:6px;font-size:12px}
+.grid7 b{font-family:var(--f-num);font-size:13px;color:var(--omr)}
+#nextBanner.soon{border-color:var(--omr);background:var(--omr-soft)}
+.pill.nae{background:var(--ink);color:var(--paper)}
+.pill.plain{background:var(--paper);color:var(--muted);border:1px solid var(--line)}
+.tl .it input[type=checkbox]{width:20px;height:20px;accent-color:var(--omr)}
+.tl .it.done .lbl{text-decoration:line-through;color:var(--muted)}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:2px solid var(--omr);display:grid;grid-template-columns:repeat(6,1fr);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);z-index:5}
+nav.tabs button{border:0;border-radius:0;background:none;padding:10px 2px 8px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav.tabs button .ic{font-family:var(--f-disp);font-size:18px;line-height:1}
+nav.tabs button[aria-current="page"]{color:var(--omr)}
+a{color:var(--blue)}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .2s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="sub">2028학년도 · 경영 진학 준비 <span class="pill plain">이 폰에 저장</span></div>
+      <h1>입시 나침반</h1>
+    </div>
+    <div class="dday"><b id="hdD">D-</b><span>2028 수능 · 2027.11.18(목)</span></div>
+  </header>
+
+  <!-- 오늘 -->
+  <section id="v-today" class="view" data-tab="today">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <div class="row" style="justify-content:space-between"><h3>내 내신 (5등급제)</h3><button data-go="calc">과목별 보기</button></div>
+        <div class="grid5" id="gradeBubbles"></div>
+        <div class="muted" id="gradeTrend"></div>
+        <p class="note">성적표 기준 교과별 학점 가중 평균이에요. 5등급제 1등급은 상위 10%, 2등급은 누적 34%까지예요. 계산기에 성적표 과목을 넣으면 여기에 나와요. 과목명 앞에 1-1, 1-2처럼 학기를 붙이면 학기별 평균도 보여요.</p>
+      </div>
+
+      <div class="card">
+        <h3>오늘 할 일</h3>
+        <div class="row">
+          <button class="pri" data-go="plan">오늘 스케줄</button>
+          <button data-go="quiz">오늘의 통합수능 5문제</button>
+          <button data-go="note">학생부 활동 기록</button>
+        </div>
+        <div class="muted" id="todayStat"></div>
+      </div>
+
+      <div class="card">
+        <h3>2027~2028 주요 일정</h3>
+        <div class="tl" id="timeline"></div>
+        <p class="note">대교협 2028학년도 주요일정 기준. 대학별 세부 일정은 모집요강에서 확정돼요.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 전형 -->
+  <section id="v-jeonhyeong" class="view" data-tab="jeonhyeong" hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="seg" id="uniSeg"></div>
+      <div id="uniBody" style="display:flex;flex-direction:column;gap:16px"></div>
+      <div class="card">
+        <h3>수능최저 체크</h3>
+        <p class="muted">모의고사 등급(수능은 9등급제)을 넣으면 전형별 최저 충족 여부를 바로 보여줘요. 내신 등급과는 다른 숫자예요.</p>
+        <div class="grid4" id="mockInputs"></div>
+        <div id="minResult"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 계산기 -->
+  <section id="v-calc" class="view" data-tab="calc" hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <h3>교과전형 내신 환산</h3>
+        <p class="muted">성적표의 과목별 학점·등급·성취도를 넣으세요. 연세대 추천형(1단계 교과 100)과 고려대 학교추천(교과 80%) 방식으로 계산해요.</p>
+        <div class="tbl"><table id="calcTbl">
+          <thead><tr><th>과목</th><th>학점</th><th>등급</th><th>성취도</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <div class="row"><button id="addRow">과목 추가</button></div>
+        <div id="calcOut"></div>
+        <p class="note">연세대: 등급점수(1→70, 2→63, 3→45, 4→25, 5→0) + 성취도(A30, B27, C20, D10, E0)를 학점 가중평균. 고려대: 등급(1→100, 2→95, 3→83, 4→67, 5→55) 학점 가중평균 × 0.8. 융합선택·체육·예술 감점, 2단계 서류평가는 포함하지 않았어요.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 문제 -->
+  <section id="v-quiz" class="view" data-tab="quiz" hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="seg" id="quizSeg"></div>
+      <div class="card" id="quizCard"></div>
+      <div class="card">
+        <h3>과목별 정답률</h3>
+        <div id="qStat" style="display:flex;flex-direction:column;gap:8px"></div>
+        <p class="note">오늘의 5문제는 국어 2(문학·독서) · 영어 1 · 통합사회 1 · 통합과학 1로 나와요. 문제는 수능 유형에 맞춰 새로 만든 연습 문제예요.</p>
+      </div>
+      <div class="card">
+        <h3>공식 기출·예시문항</h3>
+        <p class="muted">영어 기출은 평가원·EBSi에서 연도별로 풀 수 있어요. 통합사회·통합과학은 2028 수능부터라 기출이 없고, 평가원이 2024년 9월 공개한 예시문항(통합사회 14 · 통합과학 12문항)이 가장 정확한 자료예요.</p>
+        <div class="row">
+          <a class="btn" href="https://www.kice.re.kr" target="_blank" rel="noopener">한국교육과정평가원</a>
+          <a class="btn" href="https://www.ebsi.co.kr" target="_blank" rel="noopener">EBSi 기출문제</a>
+        </div>
+        <p class="note">평가원 홈페이지에서 '2028학년도 대학수학능력시험 통합사회·통합과학 예시 문항'으로 검색하세요.</p>
+      </div>
+      <div class="card">
+        <h3>오답노트</h3>
+        <div id="wrongList" class="muted"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 학생부 -->
+  <section id="v-note" class="view" data-tab="note" hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <form class="card" id="noteForm">
+        <h3>활동 기록하기</h3>
+        <div class="grid2">
+          <div class="fld"><label for="nDate">날짜</label><input type="date" id="nDate"></div>
+          <div class="fld"><label for="nType">영역</label>
+            <select id="nType"><option>교과 세특</option><option>창체·진로</option><option>동아리</option><option>독서</option><option>탐구·보고서</option></select></div>
+        </div>
+        <div class="fld"><label for="nSubj">과목·활동명</label><input id="nSubj" placeholder="예: 경제 수행평가"></div>
+        <div class="fld"><label for="nBody">한 일과 배운 점</label><textarea id="nBody" placeholder="무엇을 궁금해했고, 어떻게 알아봤고, 무엇을 알게 됐는지"></textarea></div>
+        <div class="fld"><label for="nLink">경영과 연결되는 점</label><input id="nLink" placeholder="예: 수요 탄력성 → 가격 전략"></div>
+        <div class="row"><button class="pri" type="submit">기록 저장</button><span class="muted" id="noteMsg"></span></div>
+      </form>
+      <div class="card">
+        <div class="row" style="justify-content:space-between"><h3>내 기록</h3><span class="pill" id="noteCount">0건</span></div>
+        <div id="noteList"></div>
+      </div>
+      <div class="card">
+        <h3>학생부에서 보는 것</h3>
+        <p class="muted">연세대 종합인재형·고려대 계열적합·한양대 학업형은 학생부만으로 평가해요. 2028학년도에는 세 학교 모두 정시에서도 학생부를 반영해요(연세 서류 100점, 고려 교과우수전형 교과 20%, 한양 학생부종합평가 10%).</p>
+        <p class="note">연세대는 학과별 전공연계과목 선택 가이드라인을 발표했어요. 고3 과목 선택 전에 경영학과 항목을 꼭 확인하세요: <a href="https://admission.yonsei.ac.kr/seoul" target="_blank" rel="noopener">연세대 입학처</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 스케줄 -->
+  <section id="v-plan" class="view" data-tab="plan" hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card" id="nextBanner"></div>
+      <div class="seg" id="daySeg"></div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between"><h3 id="dayTitle"></h3><span class="muted" id="dayDone"></span></div>
+        <div class="tl" id="dayList"></div>
+        <p class="note">이번 주에 지난 일정도 체크할 수 있어요. 끝난 시간이 지나도 체크하지 않으면 미실행으로 집계돼요.</p>
+      </div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between"><h3>이번 주 실행률</h3><span class="muted" id="statRange"></span></div>
+        <div class="grid2" id="statTop"></div>
+        <div><span class="label">항목별</span><div id="statType" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div></div>
+        <div><span class="label">요일별</span><div class="grid7" id="statDays"></div></div>
+        <div><span class="label">최근 4주</span><div id="statTrend" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div></div>
+        <div><span class="label">이번 주 미실행</span><div id="statMiss" class="muted" style="margin-top:6px"></div></div>
+        <div class="row"><button class="pri" id="shareBtn" type="button">이번 주 결과 보내기</button><span class="muted" id="shareMsg"></span></div>
+        <textarea id="shareTxt" hidden readonly aria-label="보낼 결과"></textarea>
+      </div>
+      <div class="card">
+        <h3>주간 시간 합계</h3>
+        <div class="grid2" id="weekSum"></div>
+        <p class="note">국어·사회 내신 시간을 늘렸어요. 기말(2차 지필)에서 점수가 떨어지는 패턴이 반복돼서, 11/16부터 12/7까지 3주 동안은 내신 집중 모드로 바뀌어요.</p>
+        <p class="note">하교 16:30, 학원 종료(수학 22:00 · 영어 19:00 · 국어 18:30), 헬스 월·수·금 기준이에요. 실제와 다르면 알려주세요.</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="muted" style="text-align:center">출처: 각 대학 2028학년도 입학전형 시행계획(2026.4). 성적·기록은 이 폰에만 저장돼요. 브라우저 기록을 지우면 함께 지워지니 주의하세요.</p>
+</div>
+
+<nav class="tabs" aria-label="메뉴">
+  <button data-tab="today"><span class="ic">◉</span>오늘</button>
+  <button data-tab="plan"><span class="ic">◷</span>스케줄</button>
+  <button data-tab="jeonhyeong"><span class="ic">⚑</span>전형</button>
+  <button data-tab="calc"><span class="ic">∑</span>계산기</button>
+  <button data-tab="quiz"><span class="ic">✎</span>문제</button>
+  <button data-tab="note"><span class="ic">▤</span>학생부</button>
+</nav>
+
+<script>
+(function(){
+let syncHook=null;
+const store={get(k,d){try{const v=localStorage.getItem('shn_'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('shn_'+k,JSON.stringify(v))}catch(e){}if(syncHook)syncHook(k,v)}};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today=new Date();today.setHours(0,0,0,0);
+const dd=s=>{const d=new Date(s+'T00:00:00');return Math.round((d-today)/86400000)};
+const fmt=s=>s.replaceAll('-','.');
+
+/* ---------- 탭 ---------- */
+const tabs=['today','plan','jeonhyeong','calc','quiz','note'];
+function go(t){if(!tabs.includes(t))t='today';document.querySelectorAll('.view').forEach(v=>v.hidden=v.dataset.tab!==t);
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===t?'page':'false'));
+  store.set('tab',t);window.scrollTo(0,0);if(t==='quiz')renderQuiz();}
+document.querySelectorAll('nav.tabs button,[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.tab||b.dataset.go)));
+
+/* ---------- D-day / 일정 ---------- */
+const SUNEUNG='2027-11-18';
+$('#hdD').textContent='D-'+dd(SUNEUNG);
+const events=[
+  ['2026-11-16','기말 대비 모드 시작','스케줄이 내신 집중으로 바뀌어요'],
+  ['2026-12-08','2학년 2학기 기말고사 시작',''],
+  ['2027-08-31','수시 학생부 작성 기준일','3학년 1학기까지 기록 마감'],
+  ['2027-09-20','수시 원서접수 시작','9.20(월)~23(목) 중 대학별 3일 이상'],
+  ['2027-11-18','2028학년도 수능','통합형 수능 첫 시행'],
+  ['2027-12-10','수능 성적 통지',''],
+  ['2027-12-21','수시 합격자 발표 마감',''],
+  ['2028-01-03','정시 원서접수 시작','1.3(월)~6(목) 중 3일 이상'],
+  ['2028-02-10','정시 합격자 발표 마감','']];
+$('#timeline').innerHTML=events.map(([d,t,s])=>{const n=dd(d);return `<div class="it${n<0?' past':''}"><span class="d">${fmt(d)}</span><span><b>${esc(t)}</b>${s?`<br><span class="muted">${esc(s)}</span>`:''}</span><span class="n">${n>=0?'D-'+n:'완료'}</span></div>`}).join('');
+
+/* ---------- 내신 ---------- */
+const SUBJ=['국어','수학','영어','탐구'];
+const GRP={국어:['공통국어','문학','화법','독서','언어'],수학:['공통수학','대수','미적분','확률','기하'],영어:['공통영어','영어'],사회:['한국사','통합사회','정치','윤리','경제','사회','세계','동아시아','법','지리'],과학:['통합과학','생활과학','물리','화학','생명','지구']};
+function renderGrades(){
+  const nm=r=>r.s.replace(/^\d-\d\s*/,'');
+  const avg=rs=>{const c=rs.reduce((a,r)=>a+(+r.c||0),0);return c?rs.reduce((a,r)=>a+r.g*r.c,0)/c:null};
+  $('#gradeBubbles').innerHTML=Object.keys(GRP).map(k=>{const v=avg(rows.filter(r=>GRP[k].some(p=>nm(r).startsWith(p))));
+    return `<div class="bubble"><div class="g on" style="width:52px;font-size:15px">${v===null?'-':v.toFixed(2)}</div><small>${k}</small></div>`}).join('');
+  const sems=[...new Set(rows.map(r=>(r.s.match(/^\d-\d/)||[''])[0]).filter(Boolean))];
+  const all=avg(rows);
+  $('#gradeTrend').textContent=(sems.length?'학기별 평균 '+sems.map(s=>s+' '+avg(rows.filter(r=>r.s.startsWith(s))).toFixed(2)).join(' → ')+' · ':'')+(all===null?'':'전체 '+all.toFixed(2));
+}
+
+/* ---------- 전형 데이터 (2028 시행계획 원문) ---------- */
+const U=[
+ {id:'y',name:'연세대 경영학과',total:'수시 120 · 정시 95',
+  items:[
+   {t:'학생부교과 추천형',n:40,how:'1단계 교과 100(5배수) → 2단계 교과 80 + 서류 20',min:'국·수·사탐·과탐 중 2개 합 4 이내(국·수 중 1개 포함), 영어 3등급, 한국사 4등급',tag:'최저 있음',key:'y_rec',memo:'고교별 최대 10명 추천. 종합인재형과 중복지원 불가.'},
+   {t:'학생부종합 종합인재형',n:50,how:'1단계 서류 100(4배수) → 2단계 서류 70 + 면접 30(제시문 기반)',min:'추천형과 같음',tag:'최저 있음',key:'y_rec',memo:'2028 신설·통합 전형(활동우수형 대체).'},
+   {t:'논술',n:15,how:'논술 100 (인문·사회 통합형, 영어 제시문 가능)',min:'국·수·사탐·과탐 중 3개 합 6 이내(국·수 모두 포함), 영어 3등급, 한국사 4등급',tag:'최저 부활',key:'y_ess'},
+   {t:'정시 가군 (수능 유형Ⅰ)',n:95,how:'수능 900 + 서류평가 100 (교과학습발달상황·출결 정성평가)',min:'국 300 · 수 200 · 영 100 · 사탐 200 · 과탐 100, 표준점수 / 영어 1등급 100, 2등급 95',tag:'학생부 반영',key:null}
+  ]},
+ {id:'k',name:'고려대 경영학과',total:'수시 205 · 정시 116',
+  items:[
+   {t:'학생부교과 학교추천',n:53,how:'교과 80% + 서류 20% (1학년 1학기~3학년 1학기)',min:'인문계 적용하지 않음',tag:'최저 없음',key:null,memo:'고교별 최대 12명. 학업우수와 중복지원 가능(2028 변경).'},
+   {t:'학생부종합 학업우수',n:62,how:'1단계 서류 100%(5배수) → 2단계 1단계 80% + 면접 20%(학생부 기반)',min:'국·수·영·탐(상위 1) 4개 합 9 이내, 한국사 4등급',tag:'면접 신설',key:'k_acad'},
+   {t:'학생부종합 계열적합',n:39,how:'서류 100% 일괄 (2028부터 면접 없음)',min:'적용하지 않음',tag:'최저 없음',key:null},
+   {t:'논술',n:31,how:'논술 100%',min:'국·수·영·탐(상위 1) 4개 합 8 이내, 한국사 4등급',tag:'최저 있음',key:'k_ess'},
+   {t:'정시 가군 일반',n:79,how:'수능 100% · 국 200 · 수 200 · 탐 160 표준점수',min:'영어 감점 1등급 0, 2등급 −1, 3등급 −3',tag:'수능 100',key:null},
+   {t:'정시 가군 교과우수',n:37,how:'수능 80%(백분위) + 학생부 교과 20%',min:'2028년 2월 졸업예정자만 지원 가능',tag:'재학생 전용',key:null}
+  ]},
+ {id:'h',name:'한양대 경영학부',total:'수시 129 · 정시 65',
+  items:[
+   {t:'학생부교과 추천형',n:35,how:'학생부교과 60% + 학생부종합평가 40% (추천 인원 제한 없음)',min:'국·수·영·탐(상위 1) 중 수학 포함 3개 영역 각 3등급 이내',tag:'방식 변경',key:'h_rec'},
+   {t:'학생부종합 학업형',n:54,how:'학생부종합평가 100%, 면접 없음',min:'국·수·영·사·과 중 수학 포함 3개 합 7 이내',tag:'최저 있음',key:'h_acad',memo:'2028 서류형 폐지, 추천형이 학업형으로 바뀜.'},
+   {t:'학생부종합 면접형',n:15,how:'1단계 종합평가 100%(3~5배수) → 2단계 70% + 면접 30%(학생부 기반)',min:'수능 면제',tag:'2028 신설',key:null},
+   {t:'논술',n:20,how:'논술 90% + 학생부(출결) 10%',min:'국·수·영·탐(상위 1) 중 3개 합 7 이내',tag:'최저 있음',key:'h_ess'},
+   {t:'정시 나군 일반',n:65,how:'수능 90% + 학생부종합평가 10%',min:'A형 국·수 35/30 · 영 10 · 탐 25 / B형 40/35 · 10 · 15 중 높은 점수',tag:'학생부 반영',key:null}
+  ]},
+ {id:'s',name:'성균관대 경영·글로벌경영',total:'경영 183(수시 105·정시 78) · 글로벌경영 102(수시 54·정시 48)',
+  note:'수시 전형별 인원은 원문 표가 깨져서 확인하지 못했어요. 2028 수시 모집요강이 나오면 넣을게요.',
+  items:[
+   {t:'학생부교과 추천인재',n:null,how:'정량 70%(공통 35 · 선택 35) + 정성 30%',min:'국·수·영·사·과 중 3개 합 — 경영 7 이내, 글로벌경영 6 이내',tag:'졸업예정자만',key:'s_7',memo:'고교별 추천 인원 제한 없음. 2028부터 재학생만 지원 가능.'},
+   {t:'학생부종합 융합인재 (서류형)',n:null,how:'학생부 100%',min:'국·수·영·사·과 중 3개 합 6 이내',tag:'최저 있음',key:'s_6'},
+   {t:'학생부종합 탐구인재 (서류형)',n:null,how:'학생부 100%',min:'없음',tag:'최저 없음',key:null},
+   {t:'논술 언어형',n:null,how:'논술 100%',min:'국·수·영·사·과 중 3개 합 — 경영 6 이내, 글로벌경영 5 이내',tag:'최저 있음',key:'s_6'},
+   {t:'정시 경영학과 (나군)',n:78,how:'수능 100% · 국·수 중 우수 영역 순 45/30 · 탐구 15 · 영어 10',min:'학생부는 동점자 처리에만 사용',tag:'수능 100',key:null},
+   {t:'정시 글로벌경영 (다군)',n:48,how:'수능 100% · 국·수 중 우수 영역 순 35/30 · 탐구 25 · 영어 10',min:'한국사 5등급부터 감점',tag:'수능 100',key:null}
+  ]},
+ {id:'g',name:'서강대 경영학부',total:'2028 경영학부 인원 확인 중',
+  note:'서강대 2028 시행계획 원문을 열지 못해, 언론에 나온 변경 사항만 넣었어요. 경영학부 인원·수능최저는 원문을 확인한 뒤 추가할게요.',
+  items:[
+   {t:'학생부교과 지역균형',n:null,how:'학생부교과 + 출결 10% (지각·조퇴·결과도 평가)',min:'확인 필요',tag:'출결 반영',key:null},
+   {t:'논술',n:null,how:'논술 80% + 학생부교과 10% + 출결 10%',min:'확인 필요',tag:'2028 변경',key:null},
+   {t:'정시 일반',n:null,how:'수능 위주 · 탐구 반영 20% → 13.3%로 축소 · 국어·수학 중 유리한 조합 선택',min:'확인 필요',tag:'2028 변경',key:null},
+   {t:'정시 지역균형 (신설)',n:null,how:'수능 + 학생부교과·출결 반영',min:'확인 필요',tag:'2028 신설',key:null}
+  ]}
+];
+let uni=store.get('uni','y');
+function renderUni(){
+  $('#uniSeg').innerHTML=U.map(u=>`<button class="${u.id===uni?'sel':''}" data-u="${u.id}">${u.name.split(' ')[0]}</button>`).join('');
+  $('#uniSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{uni=b.dataset.u;store.set('uni',uni);renderUni()});
+  const u=U.find(x=>x.id===uni);const res=checkMin();
+  $('#uniBody').innerHTML=`<div class="row" style="justify-content:space-between"><h2>${u.name}</h2><span class="pill omr" style="white-space:normal">${u.total}</span></div>`+(u.note?`<p class="note">${u.note}</p>`:'')+
+   u.items.map(i=>{let st='';if(i.key){const r=res[i.key];st=r===null?'<span class="pill">모의고사 입력 필요</span>':r?'<span class="pill ok">최저 충족</span>':'<span class="pill bad">최저 미충족</span>'}
+    return `<div class="card"><div class="row" style="justify-content:space-between"><span class="tr-title">${i.t}</span><span class="pill${i.n?'':' plain'}">${i.n?i.n+'명':'인원 확인 중'}</span></div>
+    <div><span class="label">전형방법</span><div>${i.how}</div></div>
+    <div><span class="label">수능최저 · 반영</span><div>${i.min}</div></div>
+    <div class="row"><span class="pill warn">${i.tag}</span>${st}</div>${i.memo?`<div class="note">${i.memo}</div>`:''}</div>`}).join('');
+}
+
+/* ---------- 수능최저 ---------- */
+const MK=['국어','수학','영어','사회','과학','한국사'];
+let mock=store.get('mock',{});
+$('#mockInputs').innerHTML=MK.map(s=>`<div class="fld"><label for="mk-${s}">${s}</label><select id="mk-${s}"><option value="">-</option>${[1,2,3,4,5,6,7,8,9].map(g=>`<option${mock[s]==g?' selected':''}>${g}</option>`).join('')}</select></div>`).join('');
+MK.forEach(s=>$('#mk-'+s).addEventListener('change',e=>{mock[s]=e.target.value?+e.target.value:undefined;store.set('mock',mock);renderUni();renderMin()}));
+function checkMin(){
+  const g=mock;const has=MK.every(s=>g[s]);if(!has)return{y_rec:null,y_ess:null,k_acad:null,k_ess:null,h_rec:null,h_acad:null,h_ess:null,s_7:null,s_6:null};
+  const 탐=Math.min(g.사회,g.과학), 한=g.한국사<=4;
+  const four=[g.국어,g.수학,g.사회,g.과학];
+  let yr=99;for(let i=0;i<4;i++)for(let j=i+1;j<4;j++){if(i<2||j<2)yr=Math.min(yr,four[i]+four[j])}
+  const sm=a=>a.slice().sort((x,y)=>x-y);
+  const hr=g.수학<=3&&[g.국어,g.영어,탐].filter(x=>x<=3).length>=2;
+  const ha=g.수학+sm([g.국어,g.영어,g.사회,g.과학]).slice(0,2).reduce((a,b)=>a+b,0)<=7;
+  const he=sm([g.국어,g.수학,g.영어,탐]).slice(0,3).reduce((a,b)=>a+b,0)<=7;
+  return{
+   y_rec:yr<=4&&g.영어<=3&&한, y_ess:g.국어+g.수학+탐<=6&&g.영어<=3&&한,
+   k_acad:g.국어+g.수학+g.영어+탐<=9&&한, k_ess:g.국어+g.수학+g.영어+탐<=8&&한,
+   h_rec:hr, h_acad:ha, h_ess:he,
+   s_7:sm([g.국어,g.수학,g.영어,g.사회,g.과학]).slice(0,3).reduce((a,b)=>a+b,0)<=7,
+   s_6:sm([g.국어,g.수학,g.영어,g.사회,g.과학]).slice(0,3).reduce((a,b)=>a+b,0)<=6};
+}
+function renderMin(){
+  const r=checkMin();const names={y_rec:'연세 추천형·종합인재형',y_ess:'연세 논술',k_acad:'고려 학업우수',k_ess:'고려 논술',h_rec:'한양 교과 추천형',h_acad:'한양 학업형',h_ess:'한양 논술',s_7:'성균관 경영 추천인재 (3개 합 7)',s_6:'성균관 융합인재·경영 논술 (3개 합 6)'};
+  if(r.y_rec===null){$('#minResult').innerHTML='<p class="muted">여섯 칸을 모두 고르면 결과가 나와요.</p>';return}
+  $('#minResult').innerHTML='<div class="tbl"><table><tbody>'+Object.keys(names).map(k=>`<tr><td>${names[k]}</td><td>${r[k]?'<span class="pill ok">충족</span>':'<span class="pill bad">미충족</span>'}</td></tr>`).join('')+'</tbody></table></div>';
+}
+
+/* ---------- 내신 계산기 ---------- */
+const R0=[];
+let rows=store.get('calcRows3',[]);
+const YG={1:70,2:63,3:45,4:25,5:0},YA={A:30,B:27,C:20,D:10,E:0},KG={1:100,2:95,3:83,4:67,5:55};
+function renderCalc(){
+  $('#calcTbl tbody').innerHTML=rows.map((r,i)=>`<tr>
+   <td><input id="cs${i}" value="${esc(r.s)}" aria-label="과목"></td>
+   <td style="width:64px"><input id="cc${i}" type="number" min="1" max="8" value="${r.c}" aria-label="학점"></td>
+   <td style="width:64px"><select id="cg${i}" aria-label="등급">${[1,2,3,4,5].map(g=>`<option${r.g==g?' selected':''}>${g}</option>`).join('')}</select></td>
+   <td style="width:72px"><select id="ca${i}" aria-label="성취도"><option value="">선택</option>${'ABCDE'.split('').map(a=>`<option${r.a===a?' selected':''}>${a}</option>`).join('')}</select></td>
+   <td style="width:40px"><button data-del="${i}" aria-label="삭제">×</button></td></tr>`).join('');
+  rows.forEach((r,i)=>{['s','c','g','a'].forEach(k=>$('#c'+k+i).addEventListener('change',e=>{r[k]=k==='c'||k==='g'?+e.target.value:e.target.value;store.set('calcRows3',rows);calc()}))});
+  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.del,1);store.set('calcRows3',rows);renderCalc()});
+  calc();
+}
+function calc(){
+  renderGrades();
+  const tc=rows.reduce((a,r)=>a+(r.c||0),0);if(!tc){$('#calcOut').innerHTML='';return}
+  const k=rows.reduce((a,r)=>a+KG[r.g]*r.c,0)/tc;
+  const avg=rows.reduce((a,r)=>a+r.g*r.c,0)/tc;
+  const allA=rows.every(r=>r.a);
+  const y=allA?rows.reduce((a,r)=>a+(YG[r.g]+YA[r.a])*r.c,0)/tc:null;
+  $('#calcOut').innerHTML=`<div class="grid2">
+   <div class="card"><span class="label">평균 등급</span><span class="score">${avg.toFixed(2)}</span></div>
+   <div class="card"><span class="label">고려 학교추천 교과</span><span class="score">${(k*0.8).toFixed(2)}</span><span class="muted">80점 만점 · 교과평균 ${k.toFixed(2)}</span></div>
+   <div class="card" style="grid-column:1/-1"><span class="label">연세 추천형 1단계 교과</span>${y===null?'<span class="muted">모든 과목의 성취도(A~E)를 고르면 계산돼요.</span>':`<span class="score">${y.toFixed(2)}</span><span class="muted">100점 만점</span>`}</div></div>`;
+}
+$('#addRow').onclick=()=>{rows.push({s:'',c:4,g:1,a:''});store.set('calcRows3',rows);renderCalc()};
+
+/* ---------- 통합수능 문제 ---------- */
+const Q=[
+ {s:'통합사회',q:'어떤 재화의 수요가 증가하고 공급은 변하지 않을 때, 시장의 균형가격과 균형거래량은?',o:['가격 상승, 거래량 증가','가격 상승, 거래량 감소','가격 하락, 거래량 증가','가격 하락, 거래량 감소'],a:0,e:'수요곡선이 오른쪽으로 이동하면 공급곡선과 더 위·오른쪽에서 만나요. 가격과 거래량이 모두 늘어요.'},
+ {s:'통합사회',q:'기회비용에 대한 설명으로 옳은 것은?',o:['선택한 대안에서 얻는 만족','포기한 대안 가운데 가장 가치가 큰 것','이미 지출해 회수할 수 없는 비용','모든 대안의 가치를 더한 값'],a:1,e:'기회비용은 선택 때문에 포기한 대안 중 가장 큰 가치예요. 회수할 수 없는 비용은 매몰비용이에요.'},
+ {s:'통합사회',q:'갑국은 쌀 1단위 생산에 옷 2단위, 을국은 쌀 1단위 생산에 옷 1단위를 포기한다. 비교우위로 옳은 것은?',o:['갑국이 쌀에 비교우위','을국이 쌀에 비교우위','갑국이 두 재화 모두 비교우위','비교우위가 없다'],a:1,e:'쌀의 기회비용이 을국(옷 1)이 갑국(옷 2)보다 작으므로 을국은 쌀, 갑국은 옷에 특화하면 서로 이익이에요.'},
+ {s:'통합사회',q:'공장 폐수로 하류 주민이 피해를 보지만 시장 가격에 반영되지 않는 현상은?',o:['독과점','공공재의 무임승차','부정적 외부효과','정보의 비대칭'],a:2,e:'제3자에게 의도치 않은 손해를 주면서 대가를 치르지 않는 것은 부정적 외부효과로, 시장 실패의 대표 사례예요.'},
+ {s:'통합사회',q:'교육을 받을 권리, 근로의 권리처럼 국가에 인간다운 생활의 보장을 요구하는 기본권은?',o:['자유권','참정권','청구권','사회권'],a:3,e:'사회권은 국가의 적극적 역할을 요구하는 권리로 20세기 복지국가와 함께 강조됐어요.'},
+ {s:'통합사회',q:'롤스의 정의론에서 사회적·경제적 불평등이 허용되는 조건은?',o:['다수의 이익이 커질 때','최소 수혜자에게 최대 이익이 될 때','개인의 노력에 비례할 때','시장에서 자유롭게 결정될 때'],a:1,e:'차등의 원칙이에요. 불평등은 가장 불리한 사람에게 가장 큰 이익이 될 때만 정당하다고 봤어요.'},
+ {s:'통합사회',q:'다른 문화를 그 사회의 맥락에서 이해하려는 태도는?',o:['자문화 중심주의','문화 사대주의','문화 상대주의','문화 동화'],a:2,e:'문화 상대주의는 각 문화를 그 사회의 환경과 역사 속에서 이해하는 태도예요. 단, 인권을 침해하는 관습까지 인정하는 극단적 상대주의는 경계해요.'},
+ {s:'통합사회',q:'연중 기온이 높고 비가 많아 상록 활엽수 밀림이 나타나는 기후는?',o:['사막 기후','열대 우림 기후','지중해성 기후','툰드라 기후'],a:1,e:'적도 부근 열대 우림 기후의 특징이에요. 지중해성 기후는 여름이 건조하고 겨울에 비가 와요.'},
+ {s:'통합과학',q:'질량 2kg인 물체에 알짜힘 4N이 작용할 때 가속도의 크기는?',o:['0.5 m/s²','2 m/s²','4 m/s²','8 m/s²'],a:1,e:'뉴턴 운동 제2법칙 F = ma에서 a = F/m = 4/2 = 2 m/s²예요.'},
+ {s:'통합과학',q:'주기율표에서 같은 족 원소들이 비슷한 화학적 성질을 갖는 까닭은?',o:['원자량이 같아서','전자 껍질 수가 같아서','원자가 전자 수가 같아서','양성자 수가 같아서'],a:2,e:'같은 족은 원자가 전자 수가 같아 반응성이 비슷해요. 같은 주기는 전자 껍질 수가 같아요.'},
+ {s:'통합과학',q:'다음 중 산화에 해당하는 것은?',o:['물질이 산소를 잃는다','물질이 전자를 얻는다','물질이 산소를 얻는다','물질이 수소를 얻는다'],a:2,e:'산화는 산소를 얻거나 전자를 잃는 반응이에요. 산화와 환원은 항상 동시에 일어나요.'},
+ {s:'통합과학',q:'산과 염기의 중화 반응에서 실제로 반응하는 이온과 생성물은?',o:['H⁺ + OH⁻ → H₂O','Na⁺ + Cl⁻ → NaCl','H⁺ + Cl⁻ → HCl','O²⁻ + H⁺ → OH⁻'],a:0,e:'산의 수소 이온과 염기의 수산화 이온이 1:1로 만나 물이 생겨요. 이때 열이 나와요.'},
+ {s:'통합과학',q:'세포막의 기본 구조로 옳은 것은?',o:['셀룰로스 섬유층','인지질 이중층과 단백질','DNA와 히스톤','단일 지방산 층'],a:1,e:'인지질 이중층에 단백질이 박혀 있어 물질을 골라 통과시키는 선택적 투과성을 가져요.'},
+ {s:'통합과학',q:'유전 정보가 단백질로 만들어지는 순서로 옳은 것은?',o:['단백질 → RNA → DNA','DNA → RNA → 단백질','RNA → DNA → 단백질','DNA → 단백질 → RNA'],a:1,e:'DNA의 정보가 RNA로 전사되고, RNA의 정보가 단백질로 번역돼요.'},
+ {s:'통합과학',q:'해령처럼 판과 판이 서로 멀어지는 경계는?',o:['수렴형 경계','보존형 경계','발산형 경계','충돌형 경계'],a:2,e:'발산형 경계에서는 맨틀 물질이 올라와 새 해양 지각이 만들어져요. 보존형은 판이 어긋나는 변환 단층이에요.'},
+ {s:'통합과학',q:'생태계에서 상위 영양 단계로 갈수록 전달되는 에너지양은?',o:['늘어난다','줄어든다','변하지 않는다','두 배가 된다'],a:1,e:'각 단계에서 호흡·열 등으로 에너지가 빠져나가 상위 단계로 갈수록 줄어들어요. 그래서 생태 피라미드 모양이 돼요.'},
+ {s:'통합과학',q:'코일 속으로 자석을 넣었다 뺄 때 전류가 흐르는 현상은?',o:['정전기 유도','전자기 유도','핵분열','광전 효과'],a:1,e:'코일을 지나는 자기장이 변하면 유도 전류가 흘러요. 발전기의 원리예요.'},
+ {s:'통합과학',q:'지구 시스템을 이루는 권역이 아닌 것은?',o:['기권','수권','생물권','전자권'],a:3,e:'지구 시스템은 지권·수권·기권·생물권·외권으로 나눠요.'},
+ /* ---- 영어 (수능 유형 자체 제작) ---- */
+ {s:"영어",t:"빈칸 추론",q:"다음 빈칸에 들어갈 말로 가장 적절한 것은?",p:"Many people believe that motivation must come before action: we wait until we feel ready, and only then begin. Research on habit formation suggests the opposite. When people start a task for just two minutes, they often find themselves continuing far longer than planned. The feeling of readiness, it turns out, is less a cause of action than ________. Once we are moving, our minds supply the reasons to keep going.",o:["a reward that is promised in advance","a consequence of having already begun","a skill learned only through failure","a barrier that cannot be removed","an illusion created by other people"],a:1,e:"시작하면 계속하게 되고, 그 뒤에 의욕이 따라온다는 글이에요. 준비된 느낌은 행동의 원인이 아니라 '이미 시작한 결과'예요. 빈칸 앞뒤 문장(2분만 시작 → 계속함, 움직이면 이유가 생김)이 단서예요."},
+ {s:"영어",t:"빈칸 추론",q:"다음 빈칸에 들어갈 말로 가장 적절한 것은?",p:"When a store places a very expensive item next to ordinary products, few customers buy the expensive one. Yet sales of the mid-priced items often rise. The costly product works as a reference point: compared with it, the other prices suddenly seem reasonable. In this sense, the most important role of some products is not to be sold but to ________.",o:["attract customers from rival stores","reduce the cost of storing goods","change how other prices are judged","show the quality of the store's staff","encourage customers to save money"],a:2,e:"비싼 상품이 '기준점(reference point)' 역할을 해서 다른 가격이 싸 보이게 만든다는 내용이에요. 유통에서 말하는 앵커링 효과예요."},
+ {s:"영어",t:"빈칸 추론",q:"다음 빈칸에 들어갈 말로 가장 적절한 것은?",p:"Improving by just one percent each day seems too small to matter. After a week, the change is hardly visible. But small gains build on one another: after a year of daily one-percent improvement, the total effect is not 365 percent but nearly 38 times the starting point. Progress in learning, like money in a savings account, ________.",o:["depends mainly on natural talent","grows faster the longer it continues","stops once a goal is reached","is visible from the very first day","disappears without regular rest"],a:1,e:"작은 향상이 서로 쌓이는 복리 효과(1.01의 365제곱 ≈ 37.8)를 설명해요. 오래 계속할수록 더 빨리 커진다는 ②가 정답이에요."},
+ {s:"영어",t:"주제",q:"다음 글의 주제로 가장 적절한 것은?",p:"During sleep, the brain does not simply rest. It replays the experiences of the day, strengthening some connections between neurons and weakening others. Students who sleep after studying remember more than those who stay awake for the same amount of time, even when the total study time is equal. Cutting sleep to gain extra hours of study may therefore undo much of the learning it was meant to support.",o:["the role of sleep in consolidating learning","the causes of sleep disorders among students","the history of research on dreams","ways to study for longer hours","the effect of exercise on the brain"],a:0,e:"잠자는 동안 뇌가 낮의 경험을 되풀이하며 기억을 굳힌다는 글이에요. 마지막 문장의 결론(잠을 줄이면 학습이 무너짐)이 주제를 확인해 줘요."},
+ {s:"영어",t:"요지",q:"다음 글의 요지로 가장 적절한 것은?",p:"Feedback is most useful when it arrives quickly and points to a specific action. Telling a student 'Your essay is weak' gives little direction. Saying 'Your second paragraph needs an example to support its claim' shows exactly what to change. Vague praise has the same problem: 'Great job' feels pleasant but does not tell the learner what to repeat.",o:["칭찬은 비판보다 학습 의욕을 더 높인다.","피드백은 구체적인 행동을 제시할 때 효과적이다.","학생 스스로 자신의 글을 평가해야 한다.","피드백은 시간을 두고 신중하게 해야 한다.","글쓰기 실력은 예시를 많이 읽어야 향상된다."],a:1,e:"첫 문장이 요지예요. ④는 'arrives quickly(빠르게)'와 반대라 오답이에요. 요지 문제는 첫 문장과 마지막 문장을 먼저 보세요."},
+ {s:"영어",t:"순서 배열",q:"주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은?",p:"A small coffee shop wanted to know why customers rarely returned.\n\n(A) The results surprised the owner: the coffee itself was rated highly, but many people complained about the long wait at the counter.\n(B) So she asked first-time visitors to fill out a short survey about their experience.\n(C) After she added a second cashier during busy hours, the number of returning customers nearly doubled.",o:["(A) - (C) - (B)","(B) - (A) - (C)","(B) - (C) - (A)","(C) - (A) - (B)","(C) - (B) - (A)"],a:1,e:"문제(손님이 안 옴) → (B) 설문 → (A) 'The results' 설문 결과 → (C) 해결과 성과 순서예요. 'So', 'The results' 같은 연결어와 지시어가 단서예요."},
+ {s:"영어",t:"순서 배열",q:"주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은?",p:"Plants cannot move to find water, yet many survive long dry seasons.\n\n(A) These roots can reach water stored far below the surface, long after the topsoil has dried out.\n(B) Others take a different approach and store water in thick leaves or stems, as cacti do.\n(C) Some do this by growing roots much deeper than their height above ground.",o:["(A) - (B) - (C)","(A) - (C) - (B)","(B) - (C) - (A)","(C) - (A) - (B)","(C) - (B) - (A)"],a:3,e:"(C) 'Some do this'(일부는 이렇게 살아남음: 깊은 뿌리) → (A) 'These roots'(그 뿌리) → (B) 'Others'(다른 식물은 다른 방법)예요. Some … Others 짝이 핵심 단서예요."},
+ {s:"영어",t:"문장 삽입",q:"글의 흐름으로 보아, 다음 문장이 들어가기에 가장 적절한 곳은?\n\nAs a result, prices began to fall even though demand had not changed.",p:"In the early 2000s, a new farming technique allowed growers to harvest twice as much from the same land. ( ① ) Farmers quickly adopted it, and the supply of vegetables in the market increased sharply. ( ② ) Shoppers were pleased, but many small farms struggled to cover their costs. ( ③ ) Some of them switched to growing crops that were less common. ( ④ ) Others joined together to sell directly to restaurants at fixed prices. ( ⑤ )",o:["①","②","③","④","⑤"],a:1,e:"공급이 크게 늘었다(원인) → 그 결과 가격이 떨어졌다 → 소비자는 좋아했지만 농가는 힘들었다는 흐름이에요. 'As a result'는 바로 앞에 원인이 와야 해요."},
+ {s:"영어",t:"어법",q:"다음 중 어법상 틀린 문장은?",o:["The number of students who study abroad has increased.","She suggested that he take a short break.","The book which I borrowed it from the library was interesting.","Having finished the report, he went home.","It is important for us to protect the environment."],a:2,e:"관계대명사 which가 이미 borrowed의 목적어 역할을 하므로 it을 쓰면 안 돼요. ①은 'the number of'가 단수 취급, ②는 suggest that + (should) 동사원형이라 맞아요."},
+ {s:"영어",t:"어법",q:"다음 중 어법상 틀린 문장은?",o:["Neither the teacher nor the students were late.","I look forward to hearing from you.","He is used to getting up early.","This is the town where I was born.","She has lived here since three years."],a:4,e:"기간(three years)에는 for, 시작 시점(2023 등)에는 since를 써요. 'for three years'가 맞아요. ①은 nor 뒤 students에 동사를 맞춰 were가 맞아요."},
+ {s:"영어",t:"어휘",q:"(A), (B), (C)에 들어갈 말로 문맥에 가장 적절한 것은?",p:"Advertisers know that people tend to (A) [trust / doubt] recommendations from friends more than messages from companies. For this reason, many brands now pay ordinary users to share products online. When viewers learn that a post was paid for, however, its influence often (B) [increases / decreases]. Honest labeling may therefore be (C) [harmful / essential] for keeping consumers' confidence in the long run.",o:["trust - increases - harmful","trust - decreases - essential","doubt - decreases - essential","doubt - increases - harmful","trust - decreases - harmful"],a:1,e:"친구 추천을 더 믿고(trust), 광고인 걸 알면 영향력이 줄고(decreases), 그래서 정직한 표시가 신뢰 유지에 꼭 필요하다(essential)는 흐름이에요. however가 (B)의 방향을 바꿔 줘요."},
+ {s:"영어",t:"요약문",q:"다음 글의 내용을 한 문장으로 요약할 때, (A), (B)에 들어갈 말로 가장 적절한 것은?\n\nAlthough a wide range of options may (A) ____ people's attention, it can (B) ____ their willingness to make a choice.",p:"In one experiment, two groups of shoppers tasted jam. One table offered 24 flavors; the other offered only 6. The larger display attracted more visitors, but people who saw just 6 flavors were about ten times more likely to buy a jar. Faced with too many options, shoppers seemed to find it harder to decide and often left without choosing.",o:["attract - reduce","attract - increase","avoid - reduce","avoid - increase","divide - maintain"],a:0,e:"선택지가 많으면 관심은 끌지만(attract) 실제 구매 결정은 줄어든다(reduce)는 '선택의 역설' 실험이에요. 요약문은 글의 대조(but)를 그대로 담아요."},
+ /* ---- 통합사회 추가 ---- */
+ {s:"통합사회",t:"금융",q:"원금 100만 원을 연 10% 복리로 2년 동안 예금했을 때 받는 원리금은? (세금 제외)",o:["110만 원","120만 원","121만 원","122만 원","200만 원"],a:2,e:"1년 후 110만 원, 2년 후 110만 × 1.1 = 121만 원이에요. 단리라면 이자가 원금에만 붙어 120만 원이에요."},
+ {s:"통합사회",t:"금융",q:"필요할 때 손실 없이 쉽게 현금으로 바꿀 수 있는 정도를 뜻하는 자산 관리 원칙은?",o:["안전성","수익성","유동성","형평성","효율성"],a:2,e:"자산 관리의 세 원칙은 안전성(원금 보전), 수익성(이익), 유동성(현금화)이에요. 예금은 유동성이 높고 부동산은 낮아요."},
+ {s:"통합사회",t:"시장 실패",q:"비경합성과 비배제성을 모두 가져 시장에서 충분히 공급되기 어려운 재화는?",o:["국방 서비스","영화관 관람","유료 고속도로 이용","아파트","휴대전화"],a:0,e:"공공재는 함께 써도 줄지 않고(비경합성), 돈을 안 낸 사람도 막기 어려워요(비배제성). 그래서 무임승차 문제가 생겨 정부가 공급해요."},
+ {s:"통합사회",t:"경제",q:"물가가 지속적으로 오를 때 상대적으로 가장 불리해지는 사람은?",o:["토지 등 실물 자산 보유자","돈을 빌린 채무자","고정된 임금을 받는 근로자","물건값을 올릴 수 있는 판매자","부동산 소유자"],a:2,e:"인플레이션이면 같은 돈으로 살 수 있는 양이 줄어요. 소득이 고정된 사람, 현금 보유자, 돈을 빌려준 채권자가 불리하고 채무자와 실물 자산 보유자는 유리해요."},
+ {s:"통합사회",t:"헌법과 인권",q:"기본권 제한에 대한 설명으로 옳은 것은?",o:["기본권은 어떤 경우에도 제한할 수 없다.","대통령의 명령만으로 제한할 수 있다.","법률로 제한하더라도 본질적인 내용은 침해할 수 없다.","공공복리를 위해서라면 본질적 내용도 제한할 수 있다.","국회의원 개인이 제한 여부를 결정한다."],a:2,e:"헌법 제37조 제2항: 국가안전보장·질서유지·공공복리를 위해 필요한 경우에 한해 법률로 제한할 수 있고, 본질적인 내용은 침해할 수 없어요."},
+ {s:"통합사회",t:"헌법과 인권",q:"법률이 헌법에 위반되는지 심판하는 국가 기관은?",o:["대법원","헌법재판소","국회","감사원","중앙선거관리위원회"],a:1,e:"위헌 법률 심판, 헌법 소원 심판, 탄핵 심판 등은 헌법재판소가 맡아요."},
+ {s:"통합사회",t:"사회 정의",q:"공동체주의 입장에 가장 가까운 주장은?",o:["개인의 선택의 자유가 무엇보다 우선한다.","개인의 정체성은 공동체의 전통과 공동선 속에서 형성된다.","국가의 역할은 최소한에 그쳐야 한다.","시장에서 나온 분배 결과는 언제나 정의롭다.","개인의 권리는 공동체의 가치보다 항상 앞선다."],a:1,e:"공동체주의는 개인이 공동체 안에서 정체성을 갖는다고 보고 공동선과 연대를 강조해요. ①·③·⑤는 자유주의 쪽 주장이에요."},
+ {s:"통합사회",t:"사회 정의",q:"사회적 약자의 기회를 넓히려는 적극적 우대 조치의 사례로 가장 적절한 것은?",o:["농어촌 학생 특별 전형","모든 상품에 같은 세율을 매기는 부가가치세","시험 성적만으로 하는 선발","선착순 아파트 분양","나이에 따른 일괄 퇴직"],a:0,e:"적극적 우대 조치는 불리한 처지에 있던 집단에게 혜택을 주어 실질적 평등을 이루려는 정책이에요. 역차별 논란이 함께 다뤄져요."},
+ {s:"통합사회",t:"세계화",q:"지역의 특성을 살린 축제·상품·이미지로 지역 가치를 높이려는 전략은?",o:["장소 마케팅","공정 무역","젠트리피케이션","역도시화","교외화"],a:0,e:"장소 마케팅은 지역 브랜드화, 축제 개최 등으로 지역을 하나의 상품처럼 알리는 전략이에요. 세계화 속 지역화의 대표 사례예요."},
+ {s:"통합사회",t:"지속가능발전",q:"기업마다 온실가스 배출 허용량을 정하고 남거나 모자란 양을 서로 사고팔게 하는 제도는?",o:["탄소 배출권 거래제","공적 개발 원조","환경 영향 평가","생태 발자국","개발 제한 구역"],a:0,e:"탄소 배출권 거래제는 시장 원리로 온실가스를 줄이는 제도예요. 생태 발자국은 인간이 쓰는 자원을 땅 면적으로 나타낸 지표예요."},
+ /* ---- 통합과학 추가 ---- */
+ {s:"통합과학",t:"힘과 운동",q:"정지 상태에서 자유 낙하한 물체의 2초 후 속력은? (중력 가속도 10 m/s², 공기 저항 무시)",o:["5 m/s","10 m/s","20 m/s","40 m/s","80 m/s"],a:2,e:"v = gt = 10 × 2 = 20 m/s예요. 이동 거리는 ½gt² = 20 m예요."},
+ {s:"통합과학",t:"힘과 운동",q:"자동차 에어백이 탑승자를 보호하는 원리로 옳은 것은?",o:["운동량의 변화를 없앤다.","충돌 시간을 늘려 받는 평균 힘을 줄인다.","탑승자의 질량을 줄인다.","충돌 직전 속력을 높인다.","마찰력을 완전히 없앤다."],a:1,e:"충격량(힘 × 시간) = 운동량 변화예요. 운동량 변화가 같을 때 충돌 시간이 길어지면 평균 힘이 작아져요."},
+ {s:"통합과학",t:"물질과 결합",q:"염화 나트륨(NaCl)에서 나트륨과 염소를 결합하는 방식은?",o:["이온 결합","공유 결합","금속 결합","수소 결합","결합하지 않는다"],a:0,e:"금속인 나트륨이 전자를 잃어 Na⁺, 비금속인 염소가 전자를 얻어 Cl⁻가 되고, 두 이온이 정전기적 인력으로 결합해요."},
+ {s:"통합과학",t:"화학 변화",q:"철이 공기 중에서 녹스는 반응에서 철에 일어나는 변화는?",o:["환원된다","산화된다","중화된다","변화가 없다","승화한다"],a:1,e:"철이 산소와 결합해 산화철이 되므로 철은 산화돼요. 산화와 환원은 항상 함께 일어나서 이때 산소는 환원돼요."},
+ {s:"통합과학",t:"화학 변화",q:"묽은 염산에 수산화 나트륨 수용액을 조금씩 넣을 때 혼합 용액의 pH 변화는?",o:["점점 작아진다","점점 커진다","변하지 않는다","0이 된다","14로 일정하다"],a:1,e:"산성(pH < 7) 용액에 염기를 넣으면 H⁺가 줄어 pH가 커져요. 완전히 중화되면 7, 염기를 더 넣으면 7보다 커져요."},
+ {s:"통합과학",t:"생명 시스템",q:"효소에 대한 설명으로 옳은 것은?",o:["반응에서 나오는 열을 늘린다.","반응의 활성화 에너지를 낮춘다.","반응 후 소모되어 없어진다.","모든 기질에 작용한다.","온도의 영향을 받지 않는다."],a:1,e:"효소는 활성화 에너지를 낮춰 반응을 빠르게 해요. 반응 후에도 그대로 남아 다시 쓰이고, 특정 기질에만 작용하며, 온도와 pH의 영향을 받아요."},
+ {s:"통합과학",t:"생명 시스템",q:"식물 세포에서 광합성이 일어나는 세포 소기관은?",o:["미토콘드리아","엽록체","리보솜","핵","골지체"],a:1,e:"엽록체에서 빛에너지로 포도당을 만들어요. 미토콘드리아는 세포 호흡으로 에너지를 얻는 곳이에요."},
+ {s:"통합과학",t:"지구 환경",q:"온실 효과에 대한 설명으로 옳은 것은?",o:["온실 기체가 자외선만 흡수한다.","온실 기체가 지표에서 방출되는 적외선을 흡수했다가 다시 방출한다.","대기가 가시광선을 모두 반사한다.","오존층이 파괴되어 생긴다.","태양풍을 막아서 생긴다."],a:1,e:"이산화 탄소, 메테인 같은 온실 기체가 지표의 적외선을 흡수·재방출해 지구를 따뜻하게 유지해요. 이 기체가 늘면 지구 온난화가 심해져요."},
+ {s:"통합과학",t:"에너지",q:"수력 발전에서 일어나는 주된 에너지 전환 과정은?",o:["화학 에너지 → 전기 에너지","위치 에너지 → 운동 에너지 → 전기 에너지","핵에너지 → 열에너지 → 전기 에너지","빛에너지 → 전기 에너지","열에너지 → 화학 에너지"],a:1,e:"높은 곳의 물(위치 에너지)이 떨어지며 운동 에너지가 되고, 발전기 터빈을 돌려 전기 에너지가 돼요. ③은 원자력, ④는 태양광 발전이에요."},
+ {s:"통합과학",t:"생물 다양성",q:"유전적 다양성이 높은 생물 집단이 환경 변화에 유리한 까닭은?",o:["개체 수가 항상 많기 때문이다.","환경 변화나 질병에도 살아남는 개체가 있을 가능성이 크기 때문이다.","먹이가 필요 없기 때문이다.","돌연변이가 일어나지 않기 때문이다.","모든 개체가 같은 형질을 갖기 때문이다."],a:1,e:"형질이 다양하면 새로운 환경이나 질병에 견디는 개체가 있을 가능성이 커서 집단이 살아남기 쉬워요."},
+ /* ---- 국어: 문학 (저작권 만료 작품) ---- */
+ {s:"국어",t:"문학",q:"다음 시의 화자의 정서와 태도로 가장 적절한 것은?",p:"나 보기가 역겨워\n가실 때에는\n말없이 고이 보내 드리우리다\n\n(중략)\n\n나 보기가 역겨워\n가실 때에는\n죽어도 아니 눈물 흘리우리다\n\n— 김소월, 「진달래꽃」(1925)",o:["떠나는 임을 원망하며 분노를 드러낸다.","이별의 슬픔을 겉으로 드러내지 않고 반어적으로 절제한다.","임과 다시 만날 것을 확신하며 기뻐한다.","자연의 아름다움을 예찬한다.","부조리한 현실을 비판하고 저항한다."],a:1,e:"'죽어도 아니 눈물 흘리우리다'는 실제로는 몹시 슬프다는 마음을 반대로 말한 것이에요. 슬픔을 참고 임을 보내려는 절제된 태도가 핵심이에요."},
+ {s:"국어",t:"문학",q:"「진달래꽃」의 '죽어도 아니 눈물 흘리우리다'에 쓰인 표현법은?",p:"나 보기가 역겨워\n가실 때에는\n죽어도 아니 눈물 흘리우리다",o:["직유법","반어법","의인법","설의법","대구법"],a:1,e:"속마음(눈물이 날 만큼 슬픔)과 반대로 말해 정서를 강조하는 반어법이에요. 수능에서는 '반어적 표현으로 정서를 부각한다'는 선지로 자주 나와요."},
+ {s:"국어",t:"문학",q:"다음 구절에 대한 설명으로 가장 적절한 것은?",p:"님은 갔습니다. 아아, 사랑하는 나의 님은 갔습니다.\n\n(중략)\n\n아아, 님은 갔지마는 나는 님을 보내지 아니하였습니다.\n\n— 한용운, 「님의 침묵」(1926)",o:["같은 말을 되풀이해 단순히 슬픔을 강조할 뿐이다.","모순된 표현(역설)으로 이별을 받아들이지 않는 의지를 드러낸다.","과장법으로 슬픔을 실제보다 크게 부풀린다.","직유법으로 님의 모습을 구체적으로 그린다.","계절의 변화로 시간의 흐름을 보여 준다."],a:1,e:"'님은 갔지만 나는 보내지 않았다'는 겉으로는 모순이지만, 이별을 끝으로 여기지 않고 다시 만남을 믿는 의지를 담은 역설이에요."},
+ {s:"국어",t:"문학",q:"다음 고려가요에서 '얄리얄리 얄랑셩 얄라리 얄라'의 기능으로 가장 적절한 것은?",p:"살어리 살어리랏다 청산에 살어리랏다\n멀위랑 다래랑 먹고 청산에 살어리랏다\n얄리얄리 얄랑셩 얄라리 얄라\n\n— 「청산별곡」",o:["화자의 슬픔을 직접 설명한다.","후렴구로 운율을 만들고 연을 나눈다.","청산의 구체적인 풍경을 묘사한다.","시간이 흘러가는 모습을 나타낸다.","청자에게 질문을 던진다."],a:1,e:"뜻이 없는 소리로 된 후렴구예요. 리듬감을 주고 연과 연을 나누는 역할을 하며, 고려가요의 대표적인 특징이에요."},
+ {s:"국어",t:"문학 개념",q:"평시조의 형식으로 옳은 것은?",o:["3장 6구, 종장의 첫 음보는 3음절로 고정된다.","4장 8구로 이루어진다.","행과 연의 수가 자유롭다.","종장의 첫 음보는 5음절로 고정된다.","모든 연에 후렴구가 반드시 들어간다."],a:0,e:"평시조는 초장·중장·종장 3장 6구, 45자 내외예요. 종장 첫 음보가 3음절로 고정되는 것이 시조의 핵심 규칙이에요."},
+ {s:"국어",t:"문학 개념",q:"소설에서 '나'가 주인공이 되어 자신의 이야기를 들려주는 시점은?",o:["1인칭 주인공 시점","1인칭 관찰자 시점","3인칭 관찰자 시점","전지적 작가 시점","서간체"],a:0,e:"'나'가 주인공이면 1인칭 주인공 시점, '나'가 주변 인물로서 주인공을 지켜보면 1인칭 관찰자 시점이에요. 인물의 속마음까지 다 아는 서술자는 전지적 작가 시점이에요."},
+ /* ---- 국어: 비문학(독서), 자체 제작 지문 ---- */
+ {s:"국어",t:"독서 · 경제",q:"윗글의 내용과 일치하지 않는 것은?",p:"중앙은행은 물가가 지나치게 오를 때 기준금리를 올린다. 기준금리가 오르면 시중 은행의 대출 금리와 예금 금리도 따라 오른다. 돈을 빌리는 비용이 커지면 가계는 소비를, 기업은 투자를 줄인다. 반대로 예금 이자가 높아지면 사람들은 돈을 쓰기보다 저축하려 한다. 이렇게 시중에 도는 돈이 줄면 상품에 대한 수요가 감소해 물가 상승세가 둔화된다. 다만 금리 인상은 경기를 위축시켜 실업을 늘릴 수 있어, 중앙은행은 물가와 경기 사이에서 균형을 찾아야 한다.",o:["기준금리가 오르면 예금 금리도 오른다.","금리가 오르면 가계는 저축을 늘리려 한다.","금리 인상은 기업의 투자를 늘린다.","금리 인상으로 물가 상승세가 둔화될 수 있다.","금리 인상은 실업을 늘릴 위험이 있다."],a:2,e:"글에서는 돈을 빌리는 비용이 커져 기업이 투자를 '줄인다'고 했어요. 일치·불일치 문제는 선지의 방향(늘다/줄다)을 지문과 하나씩 맞춰 보세요."},
+ {s:"국어",t:"독서 · 경제",q:"윗글을 바탕으로 <보기>를 이해한 내용으로 가장 적절한 것은?\n\n<보기> A국 중앙은행이 경기 침체를 막기 위해 기준금리를 크게 낮췄다.",p:"중앙은행은 물가가 지나치게 오를 때 기준금리를 올린다. 기준금리가 오르면 시중 은행의 대출 금리와 예금 금리도 따라 오른다. 돈을 빌리는 비용이 커지면 가계는 소비를, 기업은 투자를 줄인다. 반대로 예금 이자가 높아지면 사람들은 돈을 쓰기보다 저축하려 한다. 이렇게 시중에 도는 돈이 줄면 상품에 대한 수요가 감소해 물가 상승세가 둔화된다. 다만 금리 인상은 경기를 위축시켜 실업을 늘릴 수 있어, 중앙은행은 물가와 경기 사이에서 균형을 찾아야 한다.",o:["예금 금리가 올라 저축이 늘 것이다.","대출 비용이 줄어 소비와 투자가 늘 수 있다.","시중에 도는 돈이 줄어 물가가 내려갈 것이다.","기업은 투자를 크게 줄일 것이다.","실업이 반드시 늘어날 것이다."],a:1,e:"글은 금리 '인상'의 효과를 설명했어요. <보기>는 반대로 '인하'이므로 효과도 거꾸로 적용해요. 대출 비용이 줄어 소비·투자가 늘고 경기가 살아날 수 있어요."},
+ {s:"국어",t:"독서 · 기술",q:"윗글을 바탕으로 할 때, '과적합'의 사례로 가장 적절한 것은?",p:"지도 학습은 정답이 붙은 데이터로 인공지능을 훈련하는 방법이다. 예를 들어 고양이 사진마다 '고양이'라는 이름표를 붙여 보여 주면, 모델은 사진의 특징과 이름표 사이의 관계를 찾아낸다. 학습이 끝나면 처음 보는 사진도 분류할 수 있다. 그러나 이름표가 잘못 붙은 데이터가 많으면 모델도 잘못된 관계를 배운다. 또 훈련 데이터에만 지나치게 맞춰지면 새로운 데이터에서는 성능이 떨어지는데, 이를 과적합이라고 한다.",o:["훈련에 쓴 사진은 거의 다 맞히지만 처음 보는 사진은 자주 틀린다.","이름표가 없는 데이터를 스스로 비슷한 것끼리 묶는다.","훈련 데이터가 많아 학습 시간이 오래 걸린다.","처음 보는 사진과 훈련 사진을 모두 잘 맞힌다.","사진 대신 소리 데이터로 학습한다."],a:0,e:"과적합은 '훈련 데이터에만 지나치게 맞춰져 새 데이터에서 성능이 떨어지는 것'이에요. 지문의 정의를 사례에 그대로 대입하면 돼요."},
+ {s:"국어",t:"독서 · 인문",q:"윗글의 홉스와 로크에 대한 설명으로 가장 적절한 것은?",p:"홉스는 국가가 없는 자연 상태를 '만인에 대한 만인의 투쟁'으로 보았다. 사람들은 생명을 지키기 위해 서로 계약을 맺고 권리를 강력한 주권자에게 넘긴다. 반면 로크는 자연 상태에서도 사람들이 생명·자유·재산이라는 자연권을 누린다고 보았다. 다만 이를 더 안전하게 지키려고 정부를 세우며, 정부가 자연권을 침해하면 국민은 정부에 저항할 수 있다고 주장했다.",o:["두 사람 모두 자연 상태를 평화롭다고 보았다.","홉스는 국민의 저항권을 강조했다.","로크는 정부가 자연권을 침해하면 국민이 저항할 수 있다고 보았다.","로크는 모든 권리를 주권자에게 넘겨야 한다고 보았다.","홉스는 자연 상태에서도 재산권이 보장된다고 보았다."],a:2,e:"두 사상가를 비교하는 지문은 '누가 무엇을 주장했는지'를 표로 정리하며 읽으면 좋아요. 저항권은 로크의 핵심 주장이에요."},
+ {s:"국어",t:"독서 · 과학",q:"윗글의 내용과 일치하지 않는 것은?",p:"혈액 속 포도당 농도인 혈당은 일정한 범위로 유지된다. 식사 후 혈당이 오르면 이자에서 인슐린이 나와, 간이 포도당을 글리코젠으로 바꿔 저장하게 하고 세포가 포도당을 흡수하게 한다. 반대로 공복으로 혈당이 떨어지면 이자에서 글루카곤이 나와, 간에 저장된 글리코젠을 포도당으로 분해해 혈액으로 내보내게 한다.",o:["인슐린은 혈당을 낮추는 방향으로 작용한다.","글루카곤은 글리코젠의 분해를 촉진한다.","식사 후에는 글루카곤이 분비되어 혈당이 오른다.","간은 포도당을 글리코젠 형태로 저장한다.","인슐린과 글루카곤은 서로 반대 방향으로 작용한다."],a:2,e:"식사 후 혈당이 오를 때 나오는 것은 인슐린이에요. 글루카곤은 공복으로 혈당이 떨어질 때 나와요. 조건(언제)과 결과를 짝지어 읽으세요."}
+];
+const MKS='①②③④⑤';
+let qMode=store.get('qMode','today');
+let wrong=store.get('wrong',[]);
+let log=store.get('log',{});
+function dayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function todaySet(){const k=dayKey();let seed=[...k].reduce((a,c)=>a*31+c.charCodeAt(0),7)>>>0;const idx=Q.map((_,i)=>i);
+  for(let i=idx.length-1;i>0;i--){seed=(seed*1103515245+12345)>>>0;const j=seed%(i+1);[idx[i],idx[j]]=[idx[j],idx[i]]}
+  const pick=(s,n)=>idx.filter(i=>Q[i].s===s).slice(0,n);
+  return [...pick('국어',2),...pick('영어',1),...pick('통합사회',1),...pick('통합과학',1)]}
+let set=[],pos=0,right=0,answered=false;
+function startQuiz(){set=qMode==='today'?todaySet():qMode==='wrong'?wrong.slice():Q.map((_,i)=>i).filter(i=>Q[i].s===qMode);pos=0;right=0;answered=false}
+function renderQuizSeg(){
+  const modes=[['today','오늘의 5문제'],['국어','국어'],['영어','영어'],['통합사회','통합사회'],['통합과학','통합과학'],['wrong','오답 다시']];
+  $('#quizSeg').innerHTML=modes.map(([k,l])=>`<button class="${k===qMode?'sel':''}" data-m="${k}">${l}</button>`).join('');
+  $('#quizSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{qMode=b.dataset.m;store.set('qMode',qMode);startQuiz();renderQuiz()});
+}
+function renderQuiz(){
+  renderQuizSeg();if(!set.length&&qMode!=='wrong')startQuiz();
+  const c=$('#quizCard');
+  if(!set.length){c.innerHTML='<h3>오답이 없어요</h3><p class="muted">틀린 문제가 생기면 여기서 다시 풀 수 있어요.</p>';return}
+  if(pos>=set.length){c.innerHTML=`<span class="label">결과</span><div class="score">${right} / ${set.length}</div><p class="muted">${right===set.length?'모두 맞혔어요.':'틀린 문제는 오답노트에 모였어요.'}</p><div class="row"><button class="pri" id="again">다시 풀기</button></div>`;
+    if(qMode==='today'){log[dayKey()]=right+'/'+set.length;store.set('log',log);renderTodayStat()}
+    $('#again').onclick=()=>{startQuiz();renderQuiz()};return}
+  const q=Q[set[pos]];answered=false;
+  const fixed=/[①②③④⑤]/.test(q.e)||['문장 삽입','순서 배열'].includes(q.t);
+  const ord=q.o.map((_,i)=>i);if(!fixed)for(let i=ord.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ord[i],ord[j]]=[ord[j],ord[i]]}
+  c.innerHTML=`<div class="row" style="justify-content:space-between"><span><span class="pill omr">${q.s}</span>${q.t?` <span class="pill">${q.t}</span>`:''}</span><span class="muted">${pos+1} / ${set.length}</span></div>
+   <h3 style="font-weight:500;line-height:1.5;white-space:pre-line">${esc(q.q)}</h3>
+   ${q.p?`<div class="passage${q.s==='영어'?'':' ko'}" lang="${q.s==='영어'?'en':'ko'}">${esc(q.p)}</div>`:''}
+   <div class="q-opts">${ord.map((oi,k)=>`<button data-i="${oi}"><span class="mk">${MKS[k]}</span><span>${esc(q.o[oi])}</span></button>`).join('')}</div>
+   <div id="exp"></div>`;
+  c.querySelectorAll('.q-opts button').forEach(b=>b.onclick=()=>{if(answered)return;answered=true;const i=+b.dataset.i;const qi=set[pos];
+    const st=store.get('qstat',{});st[q.s]=st[q.s]||{n:0,o:0};st[q.s].n++;if(i===q.a)st[q.s].o++;store.set('qstat',st);
+    c.querySelector('.q-opts button[data-i="'+q.a+'"]').classList.add('right');
+    if(i===q.a){right++;if(qMode==='wrong'){wrong=wrong.filter(x=>x!==qi);store.set('wrong',wrong)}}else{b.classList.add('wrong');if(!wrong.includes(qi)){wrong.push(qi);store.set('wrong',wrong)}}
+    $('#exp').innerHTML=`<div class="explain"><b>${i===q.a?'정답이에요.':'정답은 '+MKS[ord.indexOf(q.a)]+'번이에요.'}</b> ${esc(q.e)}</div><div class="row" style="margin-top:10px"><button class="pri" id="next">${pos+1<set.length?'다음 문제':'결과 보기'}</button></div>`;
+    $('#next').onclick=()=>{pos++;renderQuiz()};renderWrong()});
+  renderWrong();
+}
+function renderQStat(){const st=store.get('qstat',{});
+  $('#qStat').innerHTML=['국어','영어','통합사회','통합과학'].map(s=>{const x=st[s]||{n:0,o:0};const r=x.n?Math.round(x.o/x.n*100):0;const cnt=Q.filter(q=>q.s===s).length;
+    return `<div class="srow"><span>${s}</span><div class="bar"><i style="width:${r}%"></i></div><span class="v">${x.n?x.o+'/'+x.n+' · '+r+'%':'문제 '+cnt+'개'}</span></div>`}).join('')}
+function renderWrong(){renderQStat();$('#wrongList').innerHTML=wrong.length?wrong.map(i=>`<div class="entry"><span><span class="pill omr">${Q[i].s}</span> ${esc(Q[i].q)}</span><span class="muted">정답: ${esc(Q[i].o[Q[i].a])}</span></div>`).join(''):'아직 틀린 문제가 없어요.'}
+function renderTodayStat(){const r=log[dayKey()];const a=agg(weekDates(0).flatMap(dayItems));$('#todayStat').textContent=(r?`오늘 문제 결과 ${r} · 오답 ${wrong.length}개`:`오늘 문제를 아직 안 풀었어요 · 오답 ${wrong.length}개`)+` · 이번 주 실행률 ${pct(a.r)}`}
+
+/* ---------- 학생부 노트 ---------- */
+let notes=store.get('notes',[]);
+const sample=[{d:'예시',t:'교과 세특',s:'통합사회 · 시장과 가격',b:'수요가 늘면 가격이 오르는 원리를 배우고, 겨울철 패딩 가격 변화를 기사로 찾아 비교함.',l:'수요 변화 → 유통업체의 가격·재고 전략',ex:true}];
+$('#nDate').value=dayKey();
+function renderNotes(){
+  const list=notes.length?notes:sample;
+  $('#noteCount').textContent=notes.length+'건';
+  $('#noteList').innerHTML=list.map((n,i)=>`<div class="entry"><div class="row" style="justify-content:space-between"><span><span class="pill">${esc(n.t)}</span> <b>${esc(n.s)}</b></span><span class="muted">${esc(n.d)}</span></div>
+   <div>${esc(n.b)}</div>${n.l?`<div class="muted">경영 연결: ${esc(n.l)}</div>`:''}${n.ex?'<div class="note">예시 기록이에요. 첫 기록을 저장하면 사라져요.</div>':`<div><button data-nd="${i}">삭제</button></div>`}</div>`).join('');
+  document.querySelectorAll('[data-nd]').forEach(b=>b.onclick=()=>{notes.splice(+b.dataset.nd,1);store.set('notes',notes);renderNotes()});
+}
+$('#noteForm').addEventListener('submit',e=>{e.preventDefault();const b=$('#nBody').value.trim(),s=$('#nSubj').value.trim();
+  if(!s||!b){$('#noteMsg').textContent='과목·활동명과 내용을 적어주세요.';return}
+  notes.unshift({d:fmt($('#nDate').value||dayKey()),t:$('#nType').value,s,b,l:$('#nLink').value.trim()});store.set('notes',notes);
+  $('#nSubj').value='';$('#nBody').value='';$('#nLink').value='';$('#noteMsg').textContent='저장했어요.';renderNotes()});
+
+/* ---------- 주간 스케줄 ---------- */
+const PD=['일','월','화','수','목','금','토'];
+const B=(s,e,t,l)=>({s,e,t,l});
+const MWF=x=>[B('16:30','17:30','rest','하교·간식'),B('17:30','18:30','gym','헬스'),B('18:30','19:30','rest','저녁'),B('19:30','20:00','rest','학원 이동'),B('20:00','22:00','acad','수학 학원'),x,B('23:30','','rest','취침')];
+const TT=(a,m,b)=>[B('16:30','17:00','rest','하교·이동'),B('17:00','19:00','acad','영어 학원'),B('19:00','20:00','rest','저녁'),a,m,b,B('23:30','','rest','취침')];
+/* 평소 (~11/15): 국어·사회 내신 시간 추가 */
+const PLAN_N={
+ 1:MWF(B('22:30','23:20','nae','국어 내신: 문학 작품 정리')),
+ 2:TT(B('20:00','21:30','tam','통합사회 EBS 인강'),B('21:30','22:30','nae','사회 내신 복습'),B('22:30','23:00','rev','학생부 활동 기록')),
+ 3:MWF(B('22:30','23:20','eng','영어 약점 유형 연습')),
+ 4:TT(B('20:00','21:30','tam','통합과학 EBS 인강'),B('21:30','22:30','nae','국어 내신 복습'),B('22:30','23:00','eng','영어 단어·듣기')),
+ 5:MWF(B('22:30','23:20','rev','이번 주 오답노트 정리')),
+ 6:[B('10:00','12:00','nae','국어 내신: 교과서 작품·문제'),B('12:00','13:00','rest','점심'),B('13:00','15:00','eng','영어 약점 유형 집중'),B('15:30','18:30','acad','국어 학원'),B('19:00','','rest','저녁 이후 자유 시간')],
+ 0:[B('10:00','12:00','nae','사회 내신 개념 정리'),B('13:00','14:30','tam','탐구 EBS 인강 (밀린 강의)'),B('14:30','','rest','오후 휴식'),B('20:00','20:30','rev','다음 주 계획 확인')]
+};
+/* 기말 대비 (11/16~12/7): 시험 3주 전부터 내신 집중 */
+const PLAN_X={
+ 1:MWF(B('22:30','23:20','nae','국어 내신: 기출·예상 문제')),
+ 2:TT(B('20:00','21:30','nae','국어 내신: 교과서 작품 분석'),B('21:30','22:30','nae','사회 내신 개념 정리'),B('22:30','23:00','nae','수학 내신 오답')),
+ 3:MWF(B('22:30','23:20','nae','사회 내신 문제 풀이')),
+ 4:TT(B('20:00','21:30','nae','영어 내신: 본문·문법 정리'),B('21:30','22:30','nae','국어 내신 복습'),B('22:30','23:00','nae','사회 개념 암기 점검')),
+ 5:MWF(B('22:30','23:20','rev','이번 주 시험 범위 점검')),
+ 6:[B('10:00','12:00','nae','국어 내신 기출 풀이'),B('12:00','13:00','rest','점심'),B('13:00','15:00','nae','사회 내신 기출 풀이'),B('15:30','18:30','acad','국어 학원'),B('19:30','21:30','nae','수학 내신 문제 풀이')],
+ 0:[B('10:00','12:00','nae','영어 내신 본문 암기'),B('13:00','15:00','nae','기타 과목 정리·오답'),B('15:00','','rest','휴식'),B('20:00','20:30','rev','다음 주 시험 계획')]
+};
+const EXAM='2026-12-08',EX_FROM='2026-11-16';
+const isExamMode=d=>{const k=dk(d);return k>=EX_FROM&&k<EXAM};
+const planOf=d=>(isExamMode(d)?PLAN_X:PLAN_N)[d.getDay()];
+const TL={rest:['plain','휴식'],gym:['ok','운동'],acad:['omr','학원'],eng:['','영어 자습'],tam:['warn','탐구 자습'],rev:['plain','복습·정리'],nae:['nae','내신 대비']};
+const mm=t=>{const[h,m]=t.split(':');return (+h)*60+(+m)};
+const hm=n=>`${Math.floor(n/60)}시간${n%60?' '+(n%60)+'분':''}`;
+let pDay=new Date().getDay();
+const dk=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+let planStart=store.get('planStart',null);if(!planStart){planStart=dk(new Date());store.set('planStart',planStart)}
+function weekDates(off){const t=new Date();t.setHours(0,0,0,0);const mon=new Date(t);mon.setDate(t.getDate()-((t.getDay()+6)%7)+off*7);return [...Array(7)].map((_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d})}
+const nowMin=()=>{const n=new Date();return n.getHours()*60+n.getMinutes()};
+function dayItems(d){const k=dk(d);if(k<planStart||d>new Date())return [];
+  const list=planOf(d),done=store.get('done_'+k,[]),isT=k===dk(new Date());
+  return list.map((b,i)=>({i,b,d,ok:done.includes(i)})).filter(x=>x.b.t!=='rest'&&(!isT||x.ok||nowMin()>=mm(x.b.e)))}
+function agg(items){const n=items.length,ok=items.filter(x=>x.ok),dur=x=>mm(x.b.e)-mm(x.b.s);
+  return{n,o:ok.length,pm:items.reduce((a,x)=>a+dur(x),0),om:ok.reduce((a,x)=>a+dur(x),0),r:n?Math.round(ok.length/n*100):null}}
+const pct=r=>r===null?'-':r+'%';
+const md=d=>(d.getMonth()+1)+'/'+d.getDate();
+function renderStats(){
+  const wk=weekDates(0),items=wk.flatMap(dayItems),a=agg(items);
+  $('#statRange').textContent=md(wk[0])+'~'+md(wk[6]);
+  $('#statTop').innerHTML=`<div class="card"><span class="label">실행률 (항목)</span><span class="score">${pct(a.r)}</span><span class="muted">${a.o} / ${a.n}개 실행</span></div>
+   <div class="card"><span class="label">실행 시간</span><span class="score" style="font-size:22px">${hm(a.om)}</span><span class="muted">계획 ${hm(a.pm)} 중 ${a.pm?Math.round(a.om/a.pm*100):0}%</span></div>`;
+  $('#statType').innerHTML=[['nae','내신 대비'],['acad','학원'],['eng','영어 자습'],['tam','탐구 자습'],['rev','복습·정리'],['gym','운동']].map(([k,n])=>{const s=agg(items.filter(x=>x.b.t===k));
+    return `<div class="srow"><span>${n}</span><div class="bar"><i style="width:${s.r||0}%"></i></div><span class="v">${s.o}/${s.n} · ${pct(s.r)}</span></div>`}).join('');
+  $('#statDays').innerHTML=wk.map(d=>{const s=agg(dayItems(d));return `<div><span>${PD[d.getDay()]}</span><b>${pct(s.r)}</b></div>`}).join('');
+  const names=['이번 주','지난주','2주 전','3주 전'];
+  const tr=[0,-1,-2,-3].map((o,i)=>({n:names[i],s:agg(weekDates(o).flatMap(dayItems))})).filter(x=>x.s.n);
+  $('#statTrend').innerHTML=tr.length?tr.map(x=>`<div class="srow"><span>${x.n}</span><div class="bar"><i style="width:${x.s.r}%"></i></div><span class="v">${x.s.o}/${x.s.n} · ${pct(x.s.r)}</span></div>`).join(''):'<span class="muted">집계할 기록이 아직 없어요.</span>';
+  const miss=items.filter(x=>!x.ok);
+  $('#statMiss').innerHTML=a.n?(miss.length?miss.map(x=>`<div>${PD[x.d.getDay()]} ${md(x.d)} · ${x.b.s} ${x.b.l}</div>`).join(''):'이번 주는 모두 실행했어요.'):`집계는 ${planStart.slice(5).replace('-','/')}부터 시작해요. 일정을 마치면 체크하세요.`;
+}
+function renderNext(){
+  const list=planOf(new Date()).filter(b=>b.t!=='rest'&&b.e),n=nowMin(),el=$('#nextBanner');
+  const cur=list.find(b=>mm(b.s)<=n&&n<mm(b.e)),nx=list.find(b=>mm(b.s)>n);
+  let h='';if(cur)h+=`<div><span class="label">지금</span><div><b>${cur.l}</b> <span class="muted">~${cur.e}</span></div></div>`;
+  if(nx){const left=mm(nx.s)-n;h+=`<div><span class="label">다음 일정</span><div><b>${nx.l}</b> <span class="muted">${nx.s} 시작</span> <span class="pill ${left<=10?'omr':''}">${left<=10?'10분 안에 시작':left+'분 후'}</span></div></div>`;el.classList.toggle('soon',left<=10)}
+  else el.classList.remove('soon');
+  const ed=dd(EXAM);
+  const ex=ed>=0?`<div class="row" style="justify-content:space-between"><span class="label">2학기 기말고사 12/8</span><span class="pill omr">${ed===0?'오늘 시작':'D-'+ed}</span></div><div class="muted">${isExamMode(new Date())?'지금은 기말 대비 모드예요. 내신 위주로 공부해요.':'11/16부터 기말 대비 모드로 바뀌어요.'}</div>`:'';
+  el.innerHTML=ex+(h||'<span class="muted">오늘 남은 일정이 없어요.</span>');
+}
+setInterval(()=>{renderNext()},30000);
+function renderPlan(){
+  $('#daySeg').innerHTML=[1,2,3,4,5,6,0].map(d=>`<button class="${d===pDay?'sel':''}" data-d="${d}">${PD[d]}${d===new Date().getDay()?'·오늘':''}</button>`).join('');
+  $('#daySeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{pDay=+b.dataset.d;renderPlan()});
+  const date=weekDates(0)[(pDay+6)%7],k=dk(date),isToday=k===dk(new Date()),key='done_'+k,done=store.get(key,[]);
+  const can=k>=planStart&&date<=new Date();
+  const list=planOf(date);
+  $('#dayTitle').textContent=PD[pDay]+'요일 · '+md(date)+(isToday?' · 오늘':'')+(isExamMode(date)?' · 기말 대비':'');
+  const tasks=list.map((b,i)=>i).filter(i=>list[i].t!=='rest');
+  $('#dayDone').textContent=can?`${tasks.filter(i=>done.includes(i)).length}/${tasks.length} 완료`:'';
+  $('#dayList').innerHTML=list.map((b,i)=>{const [cls,nm]=TL[b.t];const ck=can&&b.t!=='rest';const dn=ck&&done.includes(i);
+    return `<div class="it${dn?' done':''}"><span class="d">${b.s}${b.e?'~'+b.e:''}</span><span class="lbl"><b>${b.l}</b> <span class="pill ${cls}">${nm}</span></span><span>${ck?`<input type="checkbox" id="pk${i}" data-i="${i}"${dn?' checked':''} aria-label="${b.l} 완료">`:''}</span></div>`}).join('');
+  $('#dayList').querySelectorAll('input[type=checkbox]').forEach(c=>c.onchange=()=>{let d=store.get(key,[]);const i=+c.dataset.i;d=c.checked?[...new Set([...d,i])]:d.filter(x=>x!==i);store.set(key,d);renderPlan();renderTodayStat()});
+  renderStats();renderNext();
+  const sum={};weekDates(0).map(planOf).flat().forEach(b=>{if(b.e)sum[b.t]=(sum[b.t]||0)+mm(b.e)-mm(b.s)});
+  $('#weekSum').innerHTML=[['nae','내신 대비'],['acad','학원'],['eng','영어 자습'],['tam','탐구 자습']].map(([k,n])=>`<div class="card"><span class="label">${n}</span><span class="score" style="font-size:22px">${hm(sum[k]||0)}</span></div>`).join('');
+}
+
+/* ---------- 공유 저장 (가족이 같은 기록을 봄) ---------- */
+const SK=['planStart','qstat','wrong','log','mock','calcRows3','notes'];
+const isShared=k=>SK.includes(k)||k.startsWith('done_');
+let ref=null,readOnly=false,pending=null,flushing=false,applying=false,lastJSON='';
+function setSync(t,cls){const el=$('#syncStat');if(el){el.textContent=t;el.className='pill '+(cls||'plain')}}
+const isObj=x=>x&&typeof x==='object'&&!Array.isArray(x);
+function deepMerge(a,b){for(const k in b){a[k]=isObj(b[k])&&isObj(a[k])?deepMerge({...a[k]},b[k]):b[k]}return a}
+function queue(patch){if(!ref||readOnly)return;pending=deepMerge(pending||{},patch);flush()}
+async function flush(){if(flushing||!pending)return;flushing=true;
+  while(pending){const p=pending;pending=null;
+    try{await ref.update(p)}catch(e){
+      const c=e&&e.code;
+      if(c==='invalid_argument'){let ex=true;try{ex=(await ref.get()).exists}catch(_){}
+        if(!ex){try{await ref.set(p);continue}catch(_){}}
+        readOnly=true;setSync('읽기 전용 · 이 기기에만 저장','warn');break}
+      if(c==='resource_exhausted'||c==='unavailable'){pending=deepMerge(p,pending||{});await new Promise(r=>setTimeout(r,3000));continue}
+      setSync('공유 저장 오류 · 이 기기에만 저장','warn');break}}
+  flushing=false}
+syncHook=(k,v)=>{if(applying||!isShared(k))return;if(k.startsWith('done_'))queue({done:{[k.slice(5)]:v}});else queue({[k]:v})};
+function localState(){const o={done:{}};SK.forEach(k=>{const v=store.get(k,null);if(v!==null)o[k]=v});
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('shn_done_'))o.done[k.slice(9)]=JSON.parse(localStorage.getItem(k))}}catch(e){}
+  return o}
+function mergeStates(r,l){const m={...r};
+  m.done={...(l.done||{})};for(const d in (r.done||{}))m.done[d]=[...new Set([...(m.done[d]||[]),...r.done[d]])];
+  m.wrong=[...new Set([...(r.wrong||[]),...(l.wrong||[])])];
+  m.log={...(l.log||{}),...(r.log||{})};
+  const key=n=>n.d+'|'+n.s+'|'+n.b,seen=new Set((r.notes||[]).map(key));
+  m.notes=[...(r.notes||[]),...(l.notes||[]).filter(n=>!seen.has(key(n)))];
+  m.qstat={...(l.qstat||{})};for(const s in (r.qstat||{}))if(!m.qstat[s]||r.qstat[s].n>=m.qstat[s].n)m.qstat[s]=r.qstat[s];
+  ['mock','calcRows3'].forEach(k=>{if(r[k]===undefined&&l[k]!==undefined)m[k]=l[k]});
+  m.planStart=r.planStart&&l.planStart?(r.planStart<l.planStart?r.planStart:l.planStart):(r.planStart||l.planStart);
+  return m}
+function applyRemote(s){const j=JSON.stringify(s);if(j===lastJSON)return;lastJSON=j;
+  applying=true;SK.forEach(k=>{if(s[k]!==undefined)store.set(k,s[k])});for(const d in (s.done||{}))store.set('done_'+d,s.done[d]);applying=false;
+  if(s.wrong)wrong=s.wrong;if(s.log)log=s.log;if(s.notes)notes=s.notes;if(s.calcRows3)rows=s.calcRows3;if(s.planStart)planStart=s.planStart;
+  if(s.mock){mock=s.mock;MK.forEach(k=>{const el=$('#mk-'+k);if(el)el.value=mock[k]||''})}
+  renderUni();renderMin();renderCalc();renderNotes();renderTodayStat();renderPlan();renderWrong()}
+async function startSync(){
+  const c=window.claude;if(!c||!c.use)return;
+  setSync('공유 저장 연결 중…','plain');
+  let db=null;try{db=await c.use('db')}catch(e){}
+  if(!db){setSync('이 기기에만 저장 · 로그인하면 공유돼요','plain');return}
+  ref=db.doc('app/state');let first=true;
+  ref.onSnapshot(async snap=>{
+    const r=snap.exists?snap.data():{};
+    if(first){first=false;
+      if(!store.get('synced_v1',false)){const m=mergeStates(r,localState());
+        try{if(snap.exists)await ref.update(m);else await ref.set(m);store.set('synced_v1',true)}
+        catch(e){readOnly=true;setSync('읽기 전용 · 기록 보기만 가능','warn')}
+        applyRemote(m);if(!readOnly)setSync('공유 저장 중 · 가족이 같은 기록을 봐요','ok');return}
+      setSync('공유 저장 중 · 가족이 같은 기록을 봐요','ok')}
+    if(snap.exists)applyRemote(r)},
+  e=>setSync('공유 연결 끊김 · 이 기기에만 저장','warn'))}
+
+/* ---------- 결과 보내기 ---------- */
+function weekReport(){const wk=weekDates(0),items=wk.flatMap(dayItems),a=agg(items);
+  const L=[`[입시 나침반] ${md(wk[0])}~${md(wk[6])} 주간 결과`,`실행률 ${pct(a.r)} (${a.o}/${a.n}개) · 실행 시간 ${hm(a.om)} / 계획 ${hm(a.pm)}`];
+  [['nae','내신 대비'],['acad','학원'],['eng','영어 자습'],['tam','탐구 자습'],['rev','복습·정리'],['gym','운동']].forEach(([k,n])=>{const s=agg(items.filter(x=>x.b.t===k));if(s.n)L.push(`- ${n}: ${s.o}/${s.n} (${pct(s.r)})`)});
+  const miss=items.filter(x=>!x.ok);if(miss.length){L.push('못 한 일정:');miss.slice(0,10).forEach(x=>L.push(`- ${PD[x.d.getDay()]} ${x.b.l}`))}
+  const st=store.get('qstat',{});const q=['국어','영어','통합사회','통합과학'].filter(s=>st[s]&&st[s].n).map(s=>`${s} ${st[s].o}/${st[s].n}`);
+  if(q.length)L.push('문제 정답(누적): '+q.join(' · '));L.push(`오답노트 ${wrong.length}개`);
+  return L.join('\n')}
+$('#shareBtn').addEventListener('click',()=>{const t=weekReport(),ta=$('#shareTxt');ta.value=t;
+  const fallback=()=>{ta.hidden=false;ta.focus();ta.select();$('#shareMsg').textContent='아래 글을 길게 눌러 복사해 카카오톡에 붙여 넣으세요.'};
+  try{navigator.clipboard.writeText(t).then(()=>{ta.hidden=false;$('#shareMsg').textContent='복사했어요. 카카오톡에 붙여 넣어 아빠에게 보내세요.'},fallback)}catch(e){fallback()}});
+
+/* ---------- 시작 ---------- */
+renderPlan();renderUni();renderMin();renderCalc();renderNotes();renderTodayStat();startQuiz();
+const h=(location.hash||'').slice(1);go(tabs.includes(h)?h:store.get('tab','today'));
+})();
+</script>
+
+</body>
+</html>
