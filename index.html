@@ -306,7 +306,7 @@ const fmt=s=>s.replaceAll('-','.');
 const tabs=['today','plan','jeonhyeong','calc','quiz','note'];
 function go(t){{const nb=document.getElementById('nextBar');if(nb)nb.hidden=true}if(!tabs.includes(t))t='today';document.querySelectorAll('.view').forEach(v=>v.hidden=v.dataset.tab!==t);
   document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===t?'page':'false'));
-  store.set('tab',t);window.scrollTo(0,0);if(t==='quiz')renderQuiz();}
+  store.set('tab',t);window.scrollTo(0,0);if(t==='quiz'){refreshIfNewDay();renderQuiz()}}
 document.querySelectorAll('nav.tabs button,[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.tab||b.dataset.go)));
 
 /* ---------- D-day / 일정 ---------- */
@@ -747,13 +747,23 @@ let qMode=store.get('qMode','today');
 let wrong=store.get('wrong',[]);
 let log=store.get('log',{});
 function dayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
-function todaySet(){const k=dayKey();let seed=[...k].reduce((a,c)=>a*31+c.charCodeAt(0),7)>>>0;const idx=Q.map((_,i)=>i);
-  for(let i=idx.length-1;i>0;i--){seed=(seed*1103515245+12345)>>>0;const j=seed%(i+1);[idx[i],idx[j]]=[idx[j],idx[i]]}
-  const pick=(s,n)=>idx.filter(i=>Q[i].s===s).slice(0,n);
-  const ko=pick('국어',1),sc=pick('통합과학',1),day=new Date().getDate()%2;
-  return [...pick('영어',2),...pick('통합사회',2),...(day?ko:sc)]}
+function rnd(seedStr){let h=2166136261;for(const c of seedStr){h^=c.charCodeAt(0);h=Math.imul(h,16777619)>>>0}
+  return ()=>{h^=h<<13;h>>>=0;h^=h>>>17;h^=h<<5;h>>>=0;return h/4294967296}}
+/* 오래 안 본 문제부터 고르기: seen = {문제번호: 마지막으로 푼 날짜} */
+function freshOrder(ids,seedStr){const seen=store.get('seen',{}),r=rnd(seedStr),key={};
+  ids.forEach(i=>key[i]=r());
+  return ids.slice().sort((x,y)=>{const a=seen[x]||'',b=seen[y]||'';return a<b?-1:a>b?1:key[x]-key[y]})}
+function todaySet(){const k=dayKey(),saved=store.get('todayPick',null);
+  if(saved&&saved.d===k&&Array.isArray(saved.ids)&&saved.ids.every(i=>Q[i]))return saved.ids.slice();
+  const all=Q.map((_,i)=>i),pick=(s,n)=>freshOrder(all.filter(i=>Q[i].s===s),k+s).slice(0,n);
+  const day=new Date().getDate()%2;
+  const ids=[...pick('영어',2),...pick('통합사회',2),...pick(day?'국어':'통합과학',1)];
+  store.set('todayPick',{d:k,ids});return ids}
+let quizDay='';
 let set=[],pos=0,right=0,answered=false;
-function startQuiz(){set=qMode==='today'?todaySet():qMode==='wrong'?wrong.slice():Q.map((_,i)=>i).filter(i=>Q[i].s===qMode);pos=0;right=0;answered=false}
+function startQuiz(){quizDay=dayKey();set=qMode==='today'?todaySet():qMode==='wrong'?wrong.slice():freshOrder(Q.map((_,i)=>i).filter(i=>Q[i].s===qMode),quizDay+qMode+Math.random());pos=0;right=0;answered=false}
+function refreshIfNewDay(){if(quizDay&&quizDay!==dayKey()&&!(answered===false&&pos>0&&pos<set.length)){startQuiz();if(!$('#v-quiz').hidden)renderQuiz()}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshIfNewDay()});window.addEventListener('focus',refreshIfNewDay);
 function renderQuizSeg(){
   const modes=[['today','오늘의 5문제'],['영어','영어'],['통합사회','통합사회'],['국어','국어'],['통합과학','통합과학'],['wrong','오답 다시']];
   $('#quizSeg').innerHTML=modes.map(([k,l])=>`<button class="${k===qMode?'sel':''}" data-m="${k}">${l}</button>`).join('');
@@ -770,13 +780,14 @@ function renderQuiz(){
   const q=Q[set[pos]];answered=false;
   const fixed=/[①②③④⑤]/.test(q.e)||['문장 삽입','순서 배열'].includes(q.t);
   const ord=q.o.map((_,i)=>i);if(!fixed)for(let i=ord.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ord[i],ord[j]]=[ord[j],ord[i]]}
-  c.innerHTML=`<div class="row" style="justify-content:space-between"><span><span class="pill omr">${q.s}</span>${q.t?` <span class="pill">${q.t}</span>`:''}</span><span class="muted">${pos+1} / ${set.length}</span></div>
+  c.innerHTML=`<div class="row" style="justify-content:space-between"><span><span class="pill omr">${q.s}</span>${q.t?` <span class="pill">${q.t}</span>`:''}</span><span class="muted">${qMode==='today'?(new Date().getMonth()+1)+'/'+new Date().getDate()+' 오늘의 문제 · ':''}${pos+1} / ${set.length}</span></div>
    ${CONCEPT[set[pos]]?`<details class="concept" open><summary>개념 먼저 보기</summary><div>${esc(CONCEPT[set[pos]])}</div></details>`:''}
    <h3 style="font-weight:500;line-height:1.5;white-space:pre-line">${esc(q.q)}</h3>
    ${q.p?`<div class="passage${q.s==='영어'?'':' ko'}" lang="${q.s==='영어'?'en':'ko'}">${esc(q.p)}</div>`:''}
    <div class="q-opts">${ord.map((oi,k)=>`<button data-i="${oi}"><span class="mk">${MKS[k]}</span><span>${esc(q.o[oi])}</span></button>`).join('')}</div>
    <div id="exp"></div>`;
   c.querySelectorAll('.q-opts button').forEach(b=>b.onclick=()=>{if(answered)return;answered=true;const i=+b.dataset.i;const qi=set[pos];
+    {const sn=store.get('seen',{});sn[qi]=dayKey();store.set('seen',sn)}
     const st=store.get('qstat',{});st[q.s]=st[q.s]||{n:0,o:0};st[q.s].n++;if(i===q.a)st[q.s].o++;store.set('qstat',st);
     c.querySelector('.q-opts button[data-i="'+q.a+'"]').classList.add('right');
     if(i===q.a){right++;if(qMode==='wrong'){wrong=wrong.filter(x=>x!==qi);store.set('wrong',wrong)}}else{b.classList.add('wrong');if(!wrong.includes(qi)){wrong.push(qi);store.set('wrong',wrong)}}
@@ -896,7 +907,7 @@ function renderPlan(){
 }
 
 /* ---------- 공유 저장 (가족이 같은 기록을 봄) ---------- */
-const SK=['planStart','qstat','wrong','log','mock','calcRows3','notes'];
+const SK=['planStart','qstat','wrong','log','mock','calcRows3','notes','seen','todayPick'];
 const isShared=k=>SK.includes(k)||k.startsWith('done_');
 let ref=null,readOnly=false,pending=null,flushing=false,applying=false,lastJSON='';
 function setSync(t,cls){const el=$('#syncStat');if(el){el.textContent=t;el.className='pill '+(cls||'plain')}}
